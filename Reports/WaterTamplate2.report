@@ -1,0 +1,292 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Untitled Document</title>
+<style type="text/css">
+
+  #coment {
+  color: #663300;
+  }
+  #Mhead {
+  font-family: Segoe, "Segoe UI", "DejaVu Sans", "Trebuchet MS", Verdana, sans-serif;
+  font-size: 32px;
+  font-weight: bold;
+  color: #009;
+  }
+  .Hilight {
+  font-weight: bold;
+  background-color: #6CC;
+  }
+  .CellMarked {
+  font-weight: bold;
+  background-color: lime;
+  }
+  .BadData {
+  font-weight: bold;
+  background-color: orange;
+  }
+  input:required:invalid {
+    border:1px solid orangered;
+    background-color: floralwhite;
+  }
+</style>
+</head>
+
+<body>
+<div>
+ <div align="center">
+	<span id="Mhead">Потребление воды по ТЦ "Ордер"</span>
+ </div>
+</div>
+
+<div>
+<span id="coment">
+<em>$comment</em>
+</span>
+</div>
+<p></p>
+
+<div align="center">
+<details open> <summary>Отчет по потребителям</summary>
+<p>Стоимость ХВС <input id="coldwaterPrice" type="text" required pattern="\d+(\.\d{2})?" oninput="refreshColdWaterPrice();" > </p>
+<p>Стоимость ГВС <input id="hotwaterPrice" type="text" required pattern="\d+(\.\d{2})?" oninput="refreshHotWaterPrice();" > </p>
+    <table width="80%" border="1" align="center" id="consumerreport">
+        <tr>
+          <th width="5%c" scope="col">№ п/п</th>
+          <th width="50%" scope="col">Потребитель</th>
+          <th  scope="col">ХВС, м<sup>3</sup></th>
+          <th  scope="col">ГВС, м<sup>3</sup></th>
+          <th  scope="col">Стоимость ХВС</th>
+          <th  scope="col">Стоимость ГВС</th>
+        </tr>
+    </table>
+</details>
+</div>
+<p></p>
+<div align="center">
+<details open> <summary>Отчет по счетчикам</summary>
+    <table width="80%" border="1" align="center" id="metersreport">
+        <tr>
+          <th width="5%" scope="col">№ п/п</th>
+          <th width="20%" scope="col">Узел</th>
+          <th width="5%" scope="col">Тип</th>
+          <th width="20%" scope="col">На начало, м<sup>3</sup></th>
+          <th width="20%" scope="col">На конец, м<sup>3</sup></th>
+          <th width="20%" scope="col">Потреблено, м<sup>3</sup></th>
+          <th  scope="col">Комментарий</th>
+        </tr>
+    </table>
+</details>
+</div>
+<p>&nbsp;</p>
+
+</body>
+
+<script>
+'use strict'
+
+
+var Watermeter = function(id , type , startdata, enddata, idgroup){
+     this.id = id ;
+     this.type = type ;
+     this.startdata = startdata ;
+     this.enddata = enddata ;
+	 this.idgroup = idgroup ;
+ };
+ Object.defineProperty( Watermeter.prototype, "difference" ,
+     {
+     get : function() { 
+         return (this.enddata - this.startdata) ;}
+     });
+
+class WaterNode {
+    constructor(name, consumername){
+        this.name = name ;
+        this.consumername = consumername;
+        this.waterMeters = [];
+    }
+    giveColdWater() {
+        var coldwater = null ;
+        this.waterMeters.forEach(function(meter){
+            if ( meter instanceof Watermeter){
+                if ((meter.type === "В1.2") || (meter.type === "В1.1") ||  (meter.type === "В1")){
+                    coldwater += meter.difference;
+                }
+            } else if(meter instanceof WaterNode){
+                    //Может вызвать рекурсию!
+                    coldwater -= meter.giveColdWater();
+            }
+        }
+        );
+        return coldwater;
+    }
+    giveHotWater(){
+        var hotwater = null ;
+        this.waterMeters.forEach(function(meter){
+                                                    if ( meter instanceof Watermeter){
+                                                        if (meter.type === "Т3"){
+                                                            hotwater += meter.difference;
+                                                        }
+                                                        if (meter.type === "Т4"){
+                                                            hotwater -= meter.difference;
+                                                        }
+                                                    }else if(meter instanceof WaterNode){
+                                                            //Может вызвать рекурсию!
+                                                            hotwater -= meter.giveHotWater();
+                                                        }
+                                                }
+        );
+        return hotwater;
+    }
+} ;
+
+function refreshColdWaterPrice(){
+    var table = document.getElementById("consumerreport") ;
+    var price = document.getElementById("coldwaterPrice").value;
+    for(var i= 1; i < table.rows.length; i++){
+        if (table.rows[i].cells[2].children[0] instanceof HTMLInputElement)
+                table.rows[i].cells[4].innerText = (table.rows[i].cells[2].children[0].value * price).toFixed(2) ;
+        else
+                table.rows[i].cells[4].innerText = (table.rows[i].cells[2].innerText * price).toFixed(2) ;
+    }
+    CulculateWaterPoolConsumer();
+}
+function refreshHotWaterPrice(){
+    var table = document.getElementById("consumerreport") ;
+    var price = document.getElementById("hotwaterPrice").value;
+    for(var i= 1; i < table.rows.length; i++){
+        if (table.rows[i].cells[3].children[0] instanceof HTMLInputElement)
+                table.rows[i].cells[5].innerText = (table.rows[i].cells[3].children[0].value * price).toFixed(2);
+        else
+        table.rows[i].cells[5].innerText = (table.rows[i].cells[3].innerText * price).toFixed(2) ;
+    }
+    CulculateWaterPoolConsumer();
+}
+
+var arr = new Array();
+// массив генерируется автоматически
+
+; $jscode
+
+/////////////
+
+// Добавить особое водомерный узел 6 к 8му
+;(function(){ 
+    var node8 , node6;
+    
+    arr.forEach(function(element) {
+        if (element instanceof WaterNode){
+                if (element.name === "Водом. узел №8"){
+                    node8 = element;
+                    console.log("Узел 8 найден");
+                }
+                if (element.name === "Водом. узел №6"){
+                    node6 = element;
+                    console.log("Узел 6 найден");
+                }
+        }
+    });
+    if ((node6 !== undefined ) && (node8 !== undefined)){
+            node6.waterMeters.push(node8);
+    }
+    else{
+            console.warn("Добавления водомерного узла 6 не произошло!");
+    };
+    //
+})();
+
+var metersreport_table = document.getElementById("metersreport") ;
+
+function metersReportAddRow(obj){
+  if (obj instanceof Watermeter){
+    var row = metersreport_table.insertRow(metersreport_table.rows.length);
+    row.insertCell(0).innerHTML= '';
+    row.insertCell(1).innerHTML= obj.id;
+    row.insertCell(2).innerHTML= obj.type;
+    row.insertCell(3).innerHTML= obj.startdata;
+    row.insertCell(4).innerHTML= obj.enddata;
+    row.insertCell(5).innerHTML= (+obj.difference).toFixed(3);
+    row.insertCell(6).innerHTML= '';    
+  }
+  else if (obj instanceof WaterNode){
+    var row = metersreport_table.insertRow(metersreport_table.rows.length);
+    row.setAttribute('class','Hilight')
+    row.insertCell(0).innerHTML= "";
+    row.insertCell(1).innerHTML= obj.name;
+    row.insertCell(2).innerHTML= '--';
+    row.insertCell(3).innerHTML= '--';
+    row.insertCell(4).innerHTML= '--';
+    row.insertCell(5).innerHTML= '--';
+    row.insertCell(6).innerHTML= obj.consumername;
+  }
+};
+
+var ConsumerReport_table = document.getElementById("consumerreport") ;
+function consumerReportAddRow(obj){
+  function markCell(cell , data){
+      if (data > 0) {
+          cell.setAttribute('class','CellMarked')
+      }
+      else if (data < 0){
+          cell.setAttribute('class','BadData')
+      }
+      cell.innerHTML = Number(data).toFixed(3);
+  }
+  if (obj instanceof WaterNode){
+    var row = ConsumerReport_table.insertRow(ConsumerReport_table.rows.length);
+    row.insertCell(0).innerHTML= ConsumerReport_table.rows.length-1;
+    row.insertCell(1).innerHTML= obj.consumername;
+    var coldwaterCell = row.insertCell(2);
+    markCell(coldwaterCell, obj.giveColdWater());
+    var hotwaterCell = row.insertCell(3);
+    markCell(hotwaterCell, obj.giveHotWater());
+    row.insertCell(4).innerHTML= '';
+    row.insertCell(5).innerHTML= '';
+  }
+};
+// Строим всю таблицу
+for(var i=0; i < arr.length ; i++){
+        metersReportAddRow(arr[i]);
+        for(var j=0; j < arr[i].waterMeters.length ; j++){
+			if (arr[i].waterMeters[j] instanceof Watermeter)
+					metersReportAddRow(arr[i].waterMeters[j]) ;
+        }
+}
+for(var i=0; i < arr.length ; i++){
+        consumerReportAddRow(arr[i]);
+}
+
+var row = ConsumerReport_table.insertRow(ConsumerReport_table.rows.length);
+    row.insertCell(0).innerHTML= ConsumerReport_table.rows.length-1;
+    row.insertCell(1).innerHTML= "Котельная (ввод вручную)";
+    row.insertCell(2).innerHTML= "<input id=\"coldwater_boileroom\" type=\"text\" required pattern=\"\\d+(\\.\\d{2})?\" oninput=\"refreshColdWaterPrice();\"  onchange=\"refreshColdWaterPrice();\" >";
+    row.insertCell(3).innerHTML= "<input id=\"hotwater_boileroom\" type=\"text\" required pattern=\"\\d+(\\.\\d{2})?\" oninput=\"refreshHotWaterPrice();\" onchange=\"refreshHotWaterPrice();\">";
+    row.insertCell(4).innerHTML= '';
+    row.insertCell(5).innerHTML= '';
+var row = ConsumerReport_table.insertRow(ConsumerReport_table.rows.length);
+    row.insertCell(0).innerHTML= ConsumerReport_table.rows.length-1;
+    row.insertCell(1).innerHTML= "Бассейн Чаша (расчетное)";
+    row.insertCell(2).innerHTML= "";
+    row.insertCell(3).innerHTML= "0.000";
+    row.insertCell(4).innerHTML= '';
+    row.insertCell(5).innerHTML= '';
+
+var _waterpoolrow_ = row ;
+
+function CulculateWaterPoolConsumer() {
+    var coldwaterCommon = 0;
+    var sumOtherColdWater = 0;
+    var coldwater_boileroom = Number(document.getElementById("coldwater_boileroom").value);
+    for(var i=0; i < arr.length ; i++){
+        if (String(arr[i].consumername).indexOf("Общий ВУ") >= 0){
+            coldwaterCommon = arr[i].giveColdWater() ;
+        }
+        else{
+            sumOtherColdWater += arr[i].giveColdWater();
+        }
+    }
+    _waterpoolrow_.cells[2].innerHTML = (coldwaterCommon - sumOtherColdWater - coldwater_boileroom).toFixed(3) ;
+}
+</script>
+</html>

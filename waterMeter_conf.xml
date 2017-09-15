@@ -1,0 +1,216 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<watermeters>
+  <!--
+    В1.2	 - Водопровод хозяйственно-питьевой-производственно-противопожарный		
+    В1.1	 -Водопровод хозяйственно-питьевой		
+    Т3	 -Водопровод горячей воды 		
+    Т4	 -Циркуляционный водопровод горячей воды 		
+  -->
+  
+  <admin_groups>
+  <adgroup idgroup="1" name="Ордер" />
+  <adgroup idgroup="2" name="Спорт Клуб"/>
+  <adgroup idgroup="3" name="Кафе" />
+  <adgroup idgroup="4" name="Продуктовый магазин" />
+  <adgroup idgroup="5" name="МОП" />
+  <adgroup idgroup="6" name="Аренда №201" />
+  <adgroup idgroup="7" name="Аренда №210" />
+  <adgroup idgroup="8" name="Аренда №330 С/У"/>
+  <adgroup idgroup="9" name="Аренда №211" />
+  </admin_groups>
+  
+  <DataBaseSQL1 Database="scada_arhive" DataSource="192.168.80.251" UserId="scada" Password="orderscada16" tabledata="float_watermeter_table_test" tableLinkName="meternamelink"/>
+  <DataBaseSQL Database="scada_arhive" DataSource="localhost" UserId="root" Password="root" tabledata="float_watermeter_table_test" tableLinkName="meternamelink"/>
+  <node name="Водом. узел №1" location="-2,700; 19/Л-И" consumer="Общий ВУ на вводе" idgroup="common">
+    <watermeter  snumber="14578972"  function="В1" >
+      <point time="02/14/17 12:00:00" data="3542.0" />
+    </watermeter>
+  </node>
+  <node name="Водом. узел №2" location="-0,900; 3/Л-К" consumer="Ордер С/У №006,007" idgroup="1">
+    <watermeter  snumber="55385620"  function="В1.2" >
+      <point time="02/14/17 12:00:00" data="10.4" />
+    </watermeter>
+    <watermeter  snumber="55385629"  function="Т3" >
+      <point time="02/14/17 12:00:00" data="7.26" />
+    </watermeter>
+  </node>
+  <node name="Водом. узел №3" location="0,000; 22/Л-И" consumer="Продуктовый магазин (цокольный этаж)" idgroup="4">
+    <watermeter  snumber="55144576"  function="Т4" >
+      <point time="02/14/17 12:00:00" data="613.57" />
+    </watermeter>
+    <watermeter  snumber="34824661"  function="Т3" >
+      <point time="02/14/17 12:00:00" data="645" />
+    </watermeter>
+    <watermeter  snumber="55144584"  function="В1.2">
+      <point time="02/14/17 12:00:00" data="16.72" />
+    </watermeter>
+    <watermeter  snumber="34824663"  function="В1.1">
+      <point time="02/14/17 12:00:00" data="68" />
+    </watermeter>
+  </node>
+  <node name="Водом. узел №4" location="+4,050; 19/Л-И" consumer="МОП Помещение охраны №113" idgroup="5">
+    <watermeter  snumber="55385610"  function="В1.2" >
+      <point time="02/14/17 12:00:00" data="186.1" />
+    </watermeter>
+    <watermeter  snumber="55385616"  function="Т3" >
+      <point time="02/14/17 12:00:00" data="22.86" />
+    </watermeter>
+  </node>
+  <node name="Водом. узел №5" location="+4,050; 19/А-В" consumer="МОП Клад. убор. инвентаря №116" idgroup="5">
+    <watermeter  snumber="55385613"  function="В1.2" >
+      <point time="02/14/17 12:00:00" data="1.67" />
+    </watermeter>
+    <watermeter  snumber="55385621"  function="Т3" >
+      <point time="02/14/17 12:00:00" data="0.2" />
+    </watermeter>
+  </node>
+  <node name="Водом. узел №6" location="+4,050; 23/Л-И" consumer="Кафе 1-й,2-й и цокольный этаж" idgroup="3">
+    <watermeter  snumber="34825896"  function="Т4" >
+      <point time="02/14/17 12:00:00" data="3096" />
+    </watermeter>
+    <watermeter  snumber="14561809"  function="Т3" >
+      <point time="02/14/17 12:00:00" data="2938" />
+    </watermeter>
+    <watermeter  snumber="55144578"  function="В1.2" >
+      <point time="02/14/17 12:00:00" data="99867.39" />
+    </watermeter>
+    <watermeter  snumber="14561745"  function="В1.1" >
+      <point time="02/14/17 12:00:00" data="78" />
+    </watermeter>
+  </node>
+  <node name="Водом. узел №7" location="+4,050; 24-25/А-В" consumer="Кафе С/У №167,168,169,170" idgroup="3">
+    <watermeter  snumber="55385603"  function="В1.2" >
+      <point time="02/14/17 12:00:00" data="3.36" />
+    </watermeter>
+    <watermeter  snumber="55385633"  function="Т3" >
+      <point time="02/14/17 12:00:00" data="7.24" />
+    </watermeter>
+  </node>
+  <node name="Водом. узел №8" location="+4,050; 26-27/Л-Д" consumer="МОП С/У №137,138,142,144" idgroup="5">
+    <watermeter  snumber="55385631"  function="В1.2" >
+      <point time="02/14/17 12:00:00" data="23.36" />
+    </watermeter>
+    <watermeter  snumber="55385624"  function="Т3" >
+      <point time="02/14/17 12:00:00" data="5.47" />
+    </watermeter>
+  </node>
+  <node name="Водом. узел №9" location="+8,100; 17-18/Л-И" consumer="Аренда №201" idgroup="6">
+    <watermeter  snumber="55385642"  function="В1.2" >
+      <point time="02/14/17 12:00:00" data="7.8" />
+    </watermeter>
+    <watermeter  snumber="55385640"  function="Т3" >
+      <point time="02/14/17 12:00:00" data="0.1" />
+    </watermeter>
+  </node>
+  <node name="Водом. узел №10" location="+8,100; 18/Л-И" consumer="Аренда С/У №204" idgroup="6">
+    <watermeter  snumber="55385625"  function="В1.2" >
+      <point time="02/14/17 12:00:00" data="2.3" />
+    </watermeter>
+    <watermeter  snumber="55385626"  function="Т3" >
+      <point time="02/14/17 12:00:00" data="0.6" />
+    </watermeter>
+  </node>
+  <node name="Водом. узел №11" location="+8,100; 18-19/Л-И" consumer="МОП С/У №207,208" idgroup="1">
+    <watermeter  snumber="55385615"  function="В1.2" >
+      <point time="02/14/17 12:00:00" data="2.85" />
+    </watermeter>
+    <watermeter  snumber="55385611"  function="Т3" >
+      <point time="02/14/17 12:00:00" data="1.67" />
+    </watermeter>
+  </node>
+  <node name="Водом. узел №12" location="+8,100; 19/Л-И" consumer="Аренда №210" idgroup="7">
+    <watermeter  snumber="55385638"  function="В1.2" >
+      <point time="02/14/17 12:00:00" data="18.8" />
+    </watermeter>
+    <watermeter  snumber="55385641"  function="Т3" >
+      <point time="02/14/17 12:00:00" data="0.3" />
+    </watermeter>
+  </node>
+  <node name="Водом. узел №13" location="+8,100; 22-23/А-В" consumer="Спорт Клуб Постирочная №221" idgroup="2">
+    <watermeter  snumber="55385627"  function="В1.2" >
+      <point time="02/14/17 12:00:00" data="2.2" />
+    </watermeter>
+    <watermeter  snumber="55385612"  function="Т3" >
+      <point time="02/14/17 12:00:00" data="0.55" />
+    </watermeter>
+  </node>
+  <node name="Водом. узел №14" location="+8,100; 22-23/А-В" consumer="Спорт Клуб С/У №223,224" idgroup="2">
+    <watermeter  snumber="55385639"  function="В1.2" >
+      <point time="02/14/17 12:00:00" data="71.89" />
+    </watermeter>
+    <watermeter  snumber="55385623"  function="Т3" >
+      <point time="02/14/17 12:00:00" data="8.76" />
+    </watermeter>
+  </node>
+  <node name="Водом. узел №15" location="+12,150; 18/Л-И" consumer="Ордер С/У 306,307" idgroup="1">
+    <watermeter  snumber="55385606"  function="В1.2" >
+      <point time="02/14/17 12:00:00" data="13.57" />
+    </watermeter>
+    <watermeter  snumber="55385628"  function="Т3" >
+      <point time="02/14/17 12:00:00" data="1.29" />
+    </watermeter>
+  </node>
+  <node name="Водом. узел №16" location="+12,150; 18/Л-И" consumer="Ордер Администрация 3-й этаж" idgroup="1">
+    <watermeter  snumber="34825904"  function="В1.2" >
+      <point time="02/14/17 12:00:00" data="57" />
+    </watermeter>
+    <watermeter  snumber="34825973"  function="Т3" >
+      <point time="02/14/17 12:00:00" data="26" />
+    </watermeter>
+    <watermeter  snumber="55144585"  function="Т4" >
+      <point time="02/14/17 12:00:00" data="0.16" />
+    </watermeter>
+  </node>
+  <node name="Водом. узел №17" location="+12,150; 21-22/И-Д" consumer="Аренда №330" idgroup="8">
+    <watermeter  snumber="55385617"  function="В1.2" >
+      <point time="02/14/17 12:00:00" data="7.2" />
+    </watermeter>
+    <watermeter  snumber="55385618"  function="Т3" >
+      <point time="02/14/17 12:00:00" data="1.1" />
+    </watermeter>
+  </node>
+  <node name="Водом. узел №18" location="+12,150; 21-22/Л-И" consumer="МОП С/У №337" idgroup="5">
+    <watermeter  snumber="55385609"  function="В1.2" >
+      <point time="02/14/17 12:00:00" data="7.4" />
+    </watermeter>
+    <watermeter  snumber="55385607"  function="Т3" >
+      <point time="02/14/17 12:00:00" data="1.5" />
+    </watermeter>
+  </node>
+  <node name="Водом. узел №19" location="+10,800; 22-23/Л-И" consumer="Спорт Клуб №354" idgroup="2">
+    <watermeter  snumber="14570203"  function="В1.2" >
+      <point time="02/14/17 12:00:00" data="82" />
+    </watermeter>
+    <watermeter  snumber="14561776"  function="Т3" >
+      <point time="02/14/17 12:00:00" data="136" />
+    </watermeter>
+    <watermeter  snumber="34826310"  function="Т4" >
+      <point time="02/14/17 12:00:00" data="452" />
+    </watermeter>
+  </node>
+  <node name="Водом. узел №20" location="+10,800; 22-23/А-В" consumer="Спорт Клуб С/У №351,350" idgroup="2">
+    <watermeter  snumber="55385634"  function="В1.2" >
+      <point time="02/14/17 12:00:00" data="75.5" />
+    </watermeter>
+    <watermeter  snumber="55385619"  function="Т3" >
+      <point time="02/14/17 12:00:00" data="1.6" />
+    </watermeter>
+  </node>
+  <node name="Водом. узел №21" location="+12,150; 22-23/А-В" consumer="МОП С/У №346,347" idgroup="5">
+    <watermeter  snumber="55385602"  function="В1.2" >
+      <point time="02/14/17 12:00:00" data="10" />
+    </watermeter>
+    <watermeter  snumber="55385636"  function="Т3" >
+      <point time="02/14/17 12:00:00" data="1.1" />
+    </watermeter>
+  </node>
+  <node name="Водом. узел №22(аренда)" location="+12,150; 22-23/А-В" consumer="Аренда №211" idgroup="9">
+    <watermeter  snumber="58091796"  function="В1.2" >
+      <point time="04/28/17 12:00:00" data="0" />
+    </watermeter>
+    <watermeter  snumber="56796490"  function="Т3" >
+      <point time="04/28/17 12:00:00" data="0" />
+    </watermeter>
+  </node>
+  
+</watermeters>

@@ -1,0 +1,151 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Meters>
+  <autostart serverStart="yes" TCPport ="41" defaultCOMport ="COM16" baudRate="9600" dataBits="8" parity="None" stopBits="One" timeout ="170"/>
+  <DataBaseSQL Database="scada_arhive" DataSource="localhost" UserId="root" Password="root" tbl_206 ="meter206" tbl_230 ="meter234"/>
+  <DataBaseSQL1 Database="scada_arhive" DataSource="192.168.80.251" UserId="scada" Password="orderscada16" tbl_206 ="meter206" tbl_230 ="meter234"/>
+  <MeterServer ipaddr="192.168.80.251" port="41" />
+
+  <group name="ТЦ ОРДЕР г. Кстово">
+		
+		<group name="ВВОДЫ">
+				<meter addr ="6"  type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="21640396" k_current="400"  zone ="Общий на весь ТЦ  ввод 1">
+					<meter addr ="1"  type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="26912781" k_current="120" idgroup="5" zone="Чиллер" comments=""  />
+					<group name="ЩРС 1.1">
+						<meter addr ="3"  type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="25506423" k_current="20"  idgroup="3" zone="пом.240, 241 переговорная"/>
+						<meter addr ="5"  type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="26084785" k_current="40" idgroup="4" zone ="Прод.Магазин общий ввод 2">
+							<group name="ВРУ-4">
+									<meter addr ="72" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="26874074" k_current="40" idgroup="7" zone="ВРУ">
+											<group name="АВР=>(ЩОА 1.2)">
+												<meter addr ="75" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="26007908" idgroup="7" zone="Прод.Магазин пом 023-028, 030-033, 035-036, 051-076 (освещение, розетки)"/>
+											</group>
+									</meter>
+							</group>	
+						</meter>
+						<meter addr ="4"  type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="25506538" k_current="40"  idgroup="1" zone="Ордер ЩО-2.1.1 эл.щит.2 (освещение)"/>
+						<meter addr ="121" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="26093287" idgroup="3" zone="кафе кассы водонагреватели (освещение, розетки,под.мех-м)"/>
+						<meter addr ="122" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="24948066" idgroup="3" zone="кафе пом.034,037-050, 120-134,139-141,148-156, 165-170 (освещение, розетки,под.мех-м)"/>
+						<group name="Помещение 378. Сауны">
+							<meter addr ="55" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="24444583" idgroup="2" zone="Сауны"/>
+							<meter addr ="56" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="24947677" idgroup="2"/>
+						</group>
+					</group>
+				</meter>
+				<meter addr ="7"  type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="21224776" k_current="400"  zone ="Общий на весь ТЦ  ввод 2">
+						<meter addr ="2"  type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="26912775" k_current="120" idgroup="5" zone="Чиллер">
+							<group name="ВРУ-4">
+								<meter addr ="71" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="26076568" k_current="40" idgroup="7" zone="ВРУ">
+									<group name="ЩО-1.2">
+											<meter addr ="74" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="26093299" idgroup="7" zone="Прод.Магазин пом 023-028, 030-033, 035-036, 051-076 (аварийное освещение)"/>
+									</group>
+								</meter>
+							</group>
+						</meter>
+						<group name="ЩРС 2.1">
+								<meter addr ="8"  type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="25447575" k_current="40" idgroup="4" zone ="Прод.Магазин общий ввод 1"/>
+								<meter addr ="81" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="24099908" idgroup="1" zone="пом.302-304, 306-325, 327 (освещение,розетки, фанкойл.электр.замки)" />
+								<meter addr ="61" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="22462317" idgroup="5" zone="Фасад здания"/>
+								<group name="ЩС 4">
+									<meter addr ="134" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="24392979" idgroup="6" zone="пом.342 (освещение, розетки, фанкойл)"/>	
+									<meter addr ="131" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="24949224" idgroup="6" zone="пом.345 (освещение, розетки, фанкойл)"/>
+									<meter addr ="132" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="24393109" idgroup="6" zone="пом.344 (освещение, розетки, фанкойл)"/>
+									<meter addr ="133" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="24948375" idgroup="6" zone="пом.343 (освещение, розетки, фанкойл)"/>
+									<meter addr ="135" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="24949089" idgroup="5" zone="пом.341 (коридор)"/>
+								</group>
+						</group>
+						<group name="ЩРС 2.2">
+								<meter addr ="9"  type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="28760407" k_current="40" idgroup="2" zone="Оборудование бассейна"/>
+								<meter addr ="10" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="28359510" k_current="40" idgroup="1" zone="Ордер ЩО-2.1.1 эл.щит.2 (освещение)"/>
+								<meter addr ="50" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="23394012" idgroup="2" zone="пом.349-392 спорт.клуб.бассейн (освещение )"/>
+						</group>
+				</meter>
+		</group>
+		<group name="ВРУ">
+				<group name="ВРУ-1">
+						<meter addr ="14" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="22043100" k_current="80" idgroup="7" zone="ВРУ 1">
+								<group name="ЩР-8">
+										<meter addr ="142" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="25508944" idgroup="6" zone="пом.211 (освещение, розетки, фанкойл)"/>
+										<meter addr ="140" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="25509072" idgroup="6" zone="пом.210 (освещение, розетки, фанкойл)"/>
+										<meter addr ="80" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="24949345" idgroup="6" zone="пом.330.331.332.333.334 (освещение,розетки, фанкойл)"/>
+										<meter addr ="130" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="25508933" idgroup="6" zone="пом.329 (освещение, розетки, фанкойл)"/>
+										<meter addr ="141" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="25509207" idgroup="6" zone="пом.201 (освещение, розетки, фанкойл)"/>
+										<meter addr ="143" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="26090141"/>
+								</group>
+								<meter addr ="18" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="25506580" k_current="40" idgroup="1" zone="Вентиляция пом. 106 (Ордер)"/>
+								<meter addr ="124" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="26038389" idgroup="3" zone="кафе пом.034, 037-050, 120-134, 139-141, 148-156, 165-170 (вентиляция)"/>
+								<meter addr ="127" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="24947194" idgroup="3" zone="кафе 2эт пом.227-241 (вентиляция)"/>
+								<meter addr ="52" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="26047855" idgroup="2" zone="пом.349-392 спорт.клуб.бассейн (вентиляция)"/>
+								<meter addr ="42" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="26047834" idgroup="5" zone="пом.207, 208, 209 (вентиляция)"/>
+								<meter addr ="62" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="26047810" idgroup="5" zone="пом.335,336,337, 338,339,340 (вентиляция)"/>
+								<meter addr ="31" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="26047835" idgroup="5" zone="вентиляция"/>
+								<meter addr ="160" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="29870799" k_current="16" idgroup="5" zone="Котельная"/>
+								<meter addr ="114" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="24948507" idgroup="5" zone="уличное освещение"/>
+								<meter addr ="73" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="26093259" idgroup="7" zone="Прод.Магазин пом 023-028, 030-033, 035-036, 051-076 (вентиляция)"/>
+								
+						</meter>
+						<meter addr ="15" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="29857941" k_current="80" idgroup="7" zone="ВРУ 1">
+								<group name="ЩМ 2">
+										<group name="ЩМО">
+												<meter addr ="20" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="25508947" idgroup="1" zone="пом.001-010, 101-109 (освещение розетки)"/>
+												<meter addr ="41" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="26093188" idgroup="5" zone="пом.207, 208, 209 (освещение, розетки)"/>
+												<meter addr ="125" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="25507915" idgroup="3" zone="кафе 2эт пом.227-241 (розетки, освещение)"/>
+												<meter addr ="54" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="25508968" idgroup="2" zone="пом.242-251 тех.этаж (освещение)"/>
+												<meter addr ="64" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="25508735" idgroup="5" zone="пом.335,336,337, 338,339,340 (освещение, розетки)"/>
+										</group>
+										<meter addr ="60" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="25509233" idgroup="5" zone="пом.338"/>
+										<meter addr ="86" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="24948286" idgroup="1" zone="пом.105 (зарядная у лифта)"/>
+										<group name="ЩМОА">
+												<meter addr ="104" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="25509205" idgroup="6" zone="пом.158 (освещение, розетки, фанкойл)"/>
+												<meter addr ="103" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="25509106" idgroup="6" zone="пом.159 (освещение, розетки, фанкойл)"/>
+												<meter addr ="102" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="24948387" idgroup="6" zone="пом.160 (освещение, розетки, фанкойл)"/>
+												<meter addr ="101" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="25508943" idgroup="6" zone="пом.161 (освещение, розетки, фанкойл)"/>
+												<meter addr ="100" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="25507155" idgroup="6" zone="пом.162 (освещение, розетки, фанкойл)"/>
+										</group>
+										<meter addr ="22" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="25507403" idgroup="1" zone="доквеллер, грузовой лифт"/>
+										<meter addr ="12" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="24948277" idgroup="5" zone="пом.077 парковка (освещение)"/>
+										<meter addr ="30" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="22462314" idgroup="5" zone="пом.110-119.137-147 (освещение,розетки)"/>
+										<meter addr ="24" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="25509252" idgroup="1" zone="сервисные стойки"/>
+										<meter addr ="151" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="24948596" idgroup="6" zone="пом.019 (освещение, розетки, фанкойл)"/>
+										<meter addr ="150" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="24949347" idgroup="6" zone="пом.020 (освещение, розетки, фанкойл)"/>
+								</group>
+						</meter>
+				</group> 
+				<group name="ВРУ-2">
+						<meter addr ="16" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="22043108" idgroup="7" zone="АВР 1">
+								<meter addr ="11" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="24393011" idgroup="5" zone="пом.077 парковка (аварийное освещение)"/>
+								<meter addr ="19" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="28807243" idgroup="5" zone="траволаторы, пас.лифт"/>
+								<meter addr ="23" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="26046991" idgroup="1" zone="пом.107 (щит ИБП)"/>
+						</meter>
+				</group>
+		  	<group name="ВРУ-3">
+						<meter addr ="17" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="24949887" k_current="80" idgroup="7" zone="АВР 2">
+								<group name="ЩМ 4">
+										<meter addr ="111" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="25508810" idgroup="5" zone="пом.113 (серверная стойка)"/>
+										<meter addr ="33" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="25507473" idgroup="5" zone="приводы дверей"/>
+										<meter addr ="136" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="26090136" idgroup="2" zone="Cерверная"/>
+										<meter addr ="113" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="25508288" idgroup="5" zone="пом.113 (пожарная сигнализация)"/>
+										<meter addr ="112" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="24948253" idgroup="5" zone="пом.113 (розетки)"/>
+										<meter addr ="13" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="25509107" idgroup="5" zone="поэтажные насосы"/>
+										<group name="ЩМОА">
+												<meter addr ="21" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="25508625" idgroup="1" zone="пом.001-010, 101-109 (аварийное освещение)"/>
+												<meter addr ="51" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="25508674" idgroup="2" zone="пом.349-392 спорт.клуб.бассейн (аварийное освещение)"/>
+												<meter addr ="40" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="26093217" idgroup="5" zone="авар.освещение, пожарная сигнализация"/>
+												<meter addr ="63" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="25509249" idgroup="5" zone="пом.335,336,337, 338,339,340 (ававрийное освещение)"/>
+												<meter addr ="126" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="25507284" idgroup="3" zone="кафе 2эт пом.227-241 (аварийное освещение)"/>
+												<meter addr ="32" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="27433248" idgroup="5" zone="пом.110-119.137-147 (авар.освещение)"/>
+												<meter addr ="123" type="Merc234" password_lvl1="1,1,1,1,1,1" password_lvl2="2,2,2,2,2,2" id="26093298" idgroup="3" zone="кафе пом.034,037-050, 120-134,139-141,148-156, 165-170 (аварийное освещение)"/>
+										</group>
+								</group>
+						</meter>
+				</group> 
+		</group> 
+  </group>
+ <admin_groups>
+  <adgroup idgroup="1" name="Ордер" />
+  <adgroup idgroup="2" name="Спорт Клуб"/>
+  <adgroup idgroup="3" name="Кафе" />
+  <adgroup idgroup="4" name="Продмаг" />
+  <adgroup idgroup="5" name="МОП" />
+  <adgroup idgroup="6" name="Аренда" />
+  <adgroup idgroup="7" name="Дублирующие" />
+  </admin_groups>
+</Meters> 

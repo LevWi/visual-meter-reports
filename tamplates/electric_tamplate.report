@@ -1,0 +1,326 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Untitled Document</title>
+<style type="text/css">
+
+  .elMetDIV {
+    background : #E2FFCB ;
+
+    /*width: 80%; /* Ширина слоя */
+    margin: 2px; /* Значение отступов */
+    padding: 2px; /* Поля вокруг текста */
+    border: 1px solid #000000; /* Параметры границы */
+  }
+  .elMetGroupDIV {
+    background : white ;
+    /*width: 80%; /* Ширина слоя */
+    margin: 2px; /* Значение отступов */
+    padding: 2px; /* Поля вокруг текста */
+    border: 1px solid #000000; /* Параметры границы */
+  }
+  .tableGroup{
+    background : bisque ;   
+  }
+  .tableMeter{
+    background : #BCF78C ;
+  }
+
+  #comment {
+  color: #663300;
+  }
+  #Mhead {
+  font-family: Segoe, "Segoe UI", "DejaVu Sans", "Trebuchet MS", Verdana, sans-serif;
+  font-size: 32px;
+  font-weight: bold;
+  color: #009;
+  }
+  .Hilight {
+  font-weight: bold;
+  background-color: #6CC;
+  }
+
+</style>
+</head>
+
+<body>
+<div>
+ <div align="center">
+	<span id="Mhead">Энергопотребление по ТЦ "Ордер"</span>
+ </div>
+</div>
+
+<div>
+<span id="comment">
+<em>$comment</em>
+</span>
+</div>
+<p></p>
+<div align="center">
+<details open> <summary>Отчет по потребителям</summary>
+<p>Стоимость кВт*ч <input id="price" type="text" required pattern="\d+(\.\d{2})?" oninput="refreshTable();"></p>
+<table id="accountingTable" width="80%" border="1" align="center">
+ <tr>
+   <th width="5%" scope="col">№ п/п</th>
+   <th scope="col">Название</th>
+   <th width="20%" scope="col">Потреблено, кВт*ч</th>
+   <th width="20%" scope="col">Стоимость</th>
+ </tr>
+</table>
+</details>
+</div>
+<p>&nbsp;</p>
+<div align="center" width="80%">
+    <details open> <summary>Технический учет и потери</summary>
+
+        <div style="position: relative; left: 40%;" align="left" width="80%">
+        <p>*Группа - условно объединяет несколько групп или счетчиков.<br>
+            Например, это может быть электрощит или щитовая.<br>
+        </p>
+        </div>
+        <ul style="width: 80%;" type="circle" id="electgrid">
+        </ul>
+        
+    </details>
+</div>
+</body>
+
+<script>
+  'use strict'
+  class ElectricMeter {
+      constructor(addr, id, zone, adminGroup, k_current){
+          this.id = id ;
+          this.addr = addr ;
+          this.consumedList = [null];
+         // this.celllinks = {
+         //   consumption : null
+         // };
+          this.k_current = k_current
+          this.zone = zone ;
+          this.adminGroup = adminGroup;
+          this.startData = null ;
+          this.endData = null ;
+      }
+  }
+
+  class AdminGroup{
+    constructor(name, idgroupCode){
+      this.idgroup = idgroupCode;
+      this.name = name ;
+      this.children = [] ;
+    }
+    
+    consumed(){
+        return this.children.reduce(function(sum,child){
+            return sum + child.node.consumed();
+        }, 0);
+    }
+  }
+
+  class ElGroup{
+    constructor(name){
+      this.name = name ;
+      //this.children = [] ;
+      //this.parent = null ;
+      this.adminGroup = null ;
+    }
+    addNewChild(meter){
+            if ((meter instanceof ElectricMeter) || (meter instanceof ElGroup)){
+                      this.children.push(meter);
+                      meter.parent = this ;
+            }
+    }
+    
+  }
+
+/*
+Расчет остатка/неучтенки по потреблению.
+*/
+function residual_function(){
+    if (this.obj instanceof ElectricMeter){
+            // * = Собственное потребленное значение - потребленное значение потомков
+            if (!this.children.length)
+            {
+                return 0;
+            }
+            return this.children.reduce(function(sum, child) {
+                return sum - child.consumed();
+                }, this.consumed());
+    }
+
+    //   Сумма неучтенной энергии потомков
+    else if (this.obj instanceof ElGroup){            
+            return this.children.reduce(function(sum, child) {
+                return sum + child.residual();
+                }, 0);
+    }
+}
+
+function consumed_function(){
+    if (this.obj instanceof ElectricMeter){
+            var k_current = this.obj.k_current;
+            return this.obj.consumedList.reduce(function(sum, current) {
+                return sum + current * k_current;
+                }, 0);
+    }
+    else if (this.obj instanceof ElGroup){
+            return this.children.reduce(function(sum, child) {
+                return sum + child.consumed();
+                }, 0);
+    }
+}
+
+var adminGroupsArr = new Array();
+var electricGrid = new Array();
+
+; (function() {
+/*******************************************************/    
+$arhive
+/*******************************************************/
+;
+})();
+
+(function parseAdminGroup(elem) {
+    if (elem.obj instanceof ElectricMeter){
+        adminGroupsArr.forEach(function(admG){
+        if (elem.obj.adminGroup === admG.idgroup){
+            admG.children.push(elem.obj);
+            elem.obj.adminGroup = admG;
+            elem.obj.node = elem ; // чтобы иметь доступ к древу электросети и функции расчета энергопотребления
+        }
+    });
+    }
+    elem.children.forEach(
+        function(val){
+            parseAdminGroup(val);   
+        }
+    )
+})(electricGrid);
+
+var electrGridUL = document.getElementById("electgrid")
+var accountingTable = document.getElementById("accountingTable")
+
+;(function createUllist(gridObj, ullevel){
+    var newelem = document.createElement('il');
+    ullevel.appendChild(newelem);
+    newelem = newelem.appendChild(document.createElement('div')) ;
+    if (gridObj.obj instanceof ElectricMeter){
+        newelem.setAttribute("class","elMetDIV");
+        var meter = gridObj.obj;
+        newelem.innerHTML =  
+        `<table class="tableMeter" border="1">
+            <tr>
+                <td colspan="6" align="center" style="font-size: 150%;">Счетчик</td>
+            </tr>
+            <tr>
+                <th width="5%" scope="col">Адрес</th>
+                <th width="10%" scope="col">S/N</th>
+                <th scope="col">Начало, кВт</th>
+                <th scope="col">Конец, кВт</th>
+                <th scope="col">Потреблено, кВт</th>
+                <th scope="col">Неучтено, кВт</th>
+            </tr>
+            <tr>
+                <td>${meter.addr}</td>
+                <td>${meter.id}</td>
+                <td>${meter.startData < 0 ? "н/д" : (meter.startData / 1000 * meter.k_current).toFixed(3)}</td>
+                <td>${meter.endData <  0 ? "н/д" : (meter.endData / 1000 * meter.k_current).toFixed(3) }</td>
+                <td>${(gridObj.consumed() / 1000).toFixed(3)}</td>
+                <td>${(gridObj.residual() / 1000).toFixed(3)}</td>
+            </tr>
+            <tr>
+                <td colspan="2">${meter.adminGroup.name ? meter.adminGroup.name : meter.adminGroup}</td>
+                <td colspan="4">${meter.zone}</td>
+            </tr>
+        </table><p></p>`   
+    } 
+    else if(gridObj.obj instanceof ElGroup){
+        newelem.setAttribute("class","elMetGroupDIV");
+        newelem.innerHTML =  
+        `<table class="tableGroup" border="1" width="50%">
+            <tr>
+                <td colspan="3" align="center" style="font-size: 150%;">${gridObj.obj.name}</td>
+            </tr>
+            <tr>
+                <th scope="col">Потреблено, кВт</th>
+                <th scope="col">Неучтено, кВт</th>
+            </tr>
+            <tr>
+                <td>${(gridObj.consumed()/1000).toFixed(3)}</td>
+                <td>${(gridObj.residual()/1000).toFixed(3)}</td>
+            </tr>
+        </table><p></p>`
+    }
+    var newUL;
+    if (gridObj.children.length > 0){
+        newUL = newelem.appendChild(
+        function(){
+            var v = document.createElement('details');
+            v.setAttribute("open" , "1");
+            return v
+        }() 
+        ).appendChild(document.createElement('ul'));
+        newUL.setAttribute("type" , "circle");
+    }
+    else{
+        newUL = newelem.appendChild(document.createElement('ul'));
+        newUL.setAttribute("type" , "circle");
+    }
+    //newelem.appendChild(newUL);
+    gridObj.children.forEach(
+        function(val){
+            createUllist(val, newUL);   
+        }
+    );
+})(electricGrid,electrGridUL);
+
+var totalrow ;
+;(function(){
+   /* <th width="5%" scope="col">№ п/п</th>
+   <th scope="col">Название</th>
+   <th width="20%" scope="col">Потреблено, кВт*ч</th>
+   <th width="20%" scope="col">Стоимость</th>*/
+   adminGroupsArr.forEach(function(elem, ind){
+    var row = accountingTable.insertRow(-1);
+    row.setAttribute('class','Hilight');
+    row.insertCell(0).innerHTML= ind+1;
+    row.insertCell(1).innerHTML= elem.name;
+    row.insertCell(2).innerHTML= (elem.consumed()/1000).toFixed(3);
+    (function(){
+        var cell = row.insertCell(3);
+        elem.priceCell = cell;
+        return cell;
+                }()
+    ).innerHTML= '';
+    elem.children.forEach(function(elem){
+        var row = accountingTable.insertRow(-1);
+        row.insertCell(0).innerHTML = '';
+        row.insertCell(1).innerHTML= `№ ${elem.id} | ${elem.zone}`;
+        row.insertCell(2).innerHTML= (elem.node.consumed()/1000).toFixed(3);
+        row.insertCell(3).innerHTML= '';
+        }
+    );            
+   })
+   totalrow = accountingTable.insertRow(-1);
+   totalrow.insertCell(-1).innerHTML= '';
+   totalrow.insertCell(-1).innerHTML= "<div style=\"position: relative; right: 1%;\" align=\"right\">ИТОГО</div>";
+   totalrow.insertCell(-1).innerHTML= adminGroupsArr.reduce(function(prev, cur){
+       return prev + cur.consumed()/1000 ;
+   }, 0).toFixed(3);
+   totalrow.insertCell(-1);
+   totalrow.setAttribute("class", "Hilight");
+})()
+
+function refreshTable(){
+    var price = document.getElementById("price").value;
+    var sum = 0 ;
+    adminGroupsArr.forEach(function(elem){
+        var v = (elem.consumed()/1000 * price);
+        sum += v ;
+        elem.priceCell.innerHTML = v.toFixed(2) + ' р.' ;
+    })
+    totalrow.cells[3].innerHTML = sum.toFixed(2) + ' р.';
+}
+</script>
+</html>
