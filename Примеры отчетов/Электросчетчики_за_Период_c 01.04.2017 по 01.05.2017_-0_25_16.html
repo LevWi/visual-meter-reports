@@ -1,0 +1,855 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Untitled Document</title>
+<style type="text/css">
+
+  .elMetDIV {
+    background : #E2FFCB ;
+
+    /*width: 80%; /* Ширина слоя */
+    margin: 2px; /* Значение отступов */
+    padding: 2px; /* Поля вокруг текста */
+    border: 1px solid #000000; /* Параметры границы */
+  }
+  .elMetGroupDIV {
+    background : white ;
+    /*width: 80%; /* Ширина слоя */
+    margin: 2px; /* Значение отступов */
+    padding: 2px; /* Поля вокруг текста */
+    border: 1px solid #000000; /* Параметры границы */
+  }
+  .tableGroup{
+    background : bisque ;   
+  }
+  .tableMeter{
+    background : #BCF78C ;
+  }
+
+  #comment {
+  color: #663300;
+  }
+  #Mhead {
+  font-family: Segoe, "Segoe UI", "DejaVu Sans", "Trebuchet MS", Verdana, sans-serif;
+  font-size: 32px;
+  font-weight: bold;
+  color: #009;
+  }
+  .Hilight {
+  font-weight: bold;
+  background-color: #6CC;
+  }
+
+</style>
+</head>
+
+<body>
+<div>
+ <div align="center">
+	<span id="Mhead">Энергопотребление по ТЦ "Ордер"</span>
+ </div>
+</div>
+
+<div>
+<span id="comment">
+<em>Показания за период c 01.04.2017 по 01.05.2017 <br>Общее количество счетчиков 80</em>
+</span>
+</div>
+<p></p>
+<div align="center">
+<details open> <summary>Отчет по потребителям</summary>
+<p>Стоимость кВт*ч <input id="price" type="text" required pattern="\d+(\.\d{2})?" oninput="refreshTable();"></p>
+<table id="accountingTable" width="80%" border="1" align="center">
+ <tr>
+   <th width="5%" scope="col">№ п/п</th>
+   <th scope="col">Название</th>
+   <th width="20%" scope="col">Потреблено, кВт*ч</th>
+   <th width="20%" scope="col">Стоимость</th>
+ </tr>
+</table>
+</details>
+</div>
+<p>&nbsp;</p>
+<div align="center" width="80%">
+    <details open> <summary>Технический учет и потери</summary>
+
+        <div style="position: relative; left: 40%;" align="left" width="80%">
+        <p>*Группа - условно объединяет несколько групп или счетчиков.<br>
+            Например, это может быть электрощит или щитовая.<br>
+        </p>
+        </div>
+        <ul style="width: 80%;" type="circle" id="electgrid">
+        </ul>
+        
+    </details>
+</div>
+</body>
+
+<script>
+  'use strict'
+  class ElectricMeter {
+      constructor(addr, id, zone, adminGroup, k_current){
+          this.id = id ;
+          this.addr = addr ;
+          this.consumedList = [null];
+         // this.celllinks = {
+         //   consumption : null
+         // };
+          this.k_current = k_current
+          this.zone = zone ;
+          this.adminGroup = adminGroup;
+          this.startData = null ;
+          this.endData = null ;
+      }
+  }
+
+  class AdminGroup{
+    constructor(name, idgroupCode){
+      this.idgroup = idgroupCode;
+      this.name = name ;
+      this.children = [] ;
+    }
+    
+    consumed(){
+        return this.children.reduce(function(sum,child){
+            return sum + child.node.consumed();
+        }, 0);
+    }
+  }
+
+  class ElGroup{
+    constructor(name){
+      this.name = name ;
+      //this.children = [] ;
+      //this.parent = null ;
+      this.adminGroup = null ;
+    }
+    addNewChild(meter){
+            if ((meter instanceof ElectricMeter) || (meter instanceof ElGroup)){
+                      this.children.push(meter);
+                      meter.parent = this ;
+            }
+    }
+    
+  }
+
+/*
+Расчет остатка/неучтенки по потреблению.
+*/
+function residual_function(){
+    if (this.obj instanceof ElectricMeter){
+            // * = Собственное потребленное значение - потребленное значение потомков
+            if (!this.children.length)
+            {
+                return 0;
+            }
+            return this.children.reduce(function(sum, child) {
+                return sum - child.consumed();
+                }, this.consumed());
+    }
+
+    //   Сумма неучтенной энергии потомков
+    else if (this.obj instanceof ElGroup){            
+            return this.children.reduce(function(sum, child) {
+                return sum + child.residual();
+                }, 0);
+    }
+}
+
+function consumed_function(){
+    if (this.obj instanceof ElectricMeter){
+            var k_current = this.obj.k_current;
+            return this.obj.consumedList.reduce(function(sum, current) {
+                return sum + current * k_current;
+                }, 0);
+    }
+    else if (this.obj instanceof ElGroup){
+            return this.children.reduce(function(sum, child) {
+                return sum + child.consumed();
+                }, 0);
+    }
+}
+
+var adminGroupsArr = new Array();
+var electricGrid = new Array();
+
+; (function() {
+/*******************************************************/    
+adminGroupsArr.push(new AdminGroup("Ордер", "1"));
+adminGroupsArr.push(new AdminGroup("Спорт Клуб", "2"));
+adminGroupsArr.push(new AdminGroup("Кафе", "3"));
+adminGroupsArr.push(new AdminGroup("Продмаг", "4"));
+adminGroupsArr.push(new AdminGroup("МОП", "5"));
+adminGroupsArr.push(new AdminGroup("Аренда", "6"));
+adminGroupsArr.push(new AdminGroup("Дублирующие", "7"));
+;electricGrid ={obj:new ElGroup("ТЦ ОРДЕР г. Кстово"),
+    children:[{obj:new ElGroup("ВВОДЫ"),
+    children:[{obj:(function(){ var elMet = new ElectricMeter(6, 21640396, "Общий на весь ТЦ  ввод 1 ", "", 400);
+    elMet.consumedList = [84574];
+    elMet.startData = 560329;
+    elMet.endData = 644903;
+    return elMet;})(),
+    children:[{obj:(function(){ var elMet = new ElectricMeter(1, 26912781, "Чиллер ", "5", 120);
+    elMet.consumedList = [0];
+    elMet.startData = 35219;
+    elMet.endData = 35219;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },{obj:new ElGroup("ЩРС 1.1"),
+    children:[{obj:(function(){ var elMet = new ElectricMeter(3, 25506423, "пом.240, 241 переговорная ", "3", 20);
+    elMet.consumedList = [32];
+    elMet.startData = 7217;
+    elMet.endData = 7249;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },{obj:(function(){ var elMet = new ElectricMeter(5, 26084785, "Прод.Магазин общий ввод 2 ", "4", 40);
+    elMet.consumedList = [4734];
+    elMet.startData = 18549;
+    elMet.endData = 23283;
+    return elMet;})(),
+    children:[{obj:new ElGroup("ВРУ-4"),
+    children:[{obj:(function(){ var elMet = new ElectricMeter(72, 26874074, "ВРУ ", "7", 40);
+    elMet.consumedList = [4816];
+    elMet.startData = 27199;
+    elMet.endData = 32015;
+    return elMet;})(),
+    children:[{obj:new ElGroup("АВР=>(ЩОА 1.2)"),
+    children:[{obj:(function(){ var elMet = new ElectricMeter(75, 26007908, "Прод.Магазин пом 023-028, 030-033, 035-036, 051-076 (освещение, розетки) ", "7", 1);
+    elMet.consumedList = [123889];
+    elMet.startData = 1137320;
+    elMet.endData = 1261209;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },],
+consumed : consumed_function, residual : residual_function },],
+consumed : consumed_function, residual : residual_function },],
+consumed : consumed_function, residual : residual_function },],
+consumed : consumed_function, residual : residual_function },{obj:(function(){ var elMet = new ElectricMeter(4, 25506538, "Ордер ЩО-2.1.1 эл.щит.2 (освещение) ", "1", 40);
+    elMet.consumedList = [501166];
+    elMet.startData = 910679;
+    elMet.endData = 1411845;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },{obj:(function(){ var elMet = new ElectricMeter(121, 26093287, "кафе кассы водонагреватели (освещение, розетки,под.мех-м) ", "3", 1);
+    elMet.consumedList = [746827];
+    elMet.startData = 7602470;
+    elMet.endData = 8349297;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },{obj:(function(){ var elMet = new ElectricMeter(122, 24948066, "кафе пом.034,037-050, 120-134,139-141,148-156, 165-170 (освещение, розетки,под.мех-м) ", "3", 1);
+    elMet.consumedList = [48318];
+    elMet.startData = 434455;
+    elMet.endData = 482773;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },{obj:new ElGroup("Помещение 378. Сауны"),
+    children:[{obj:(function(){ var elMet = new ElectricMeter(55, 24444583, "Сауны ", "2", 1);
+    elMet.consumedList = [1701957];
+    elMet.startData = 823208;
+    elMet.endData = 2525165;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },{obj:(function(){ var elMet = new ElectricMeter(56, 24947677, " ", "2", 1);
+    elMet.consumedList = [1113274];
+    elMet.startData = 640928;
+    elMet.endData = 1754202;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },],
+consumed : consumed_function, residual : residual_function },],
+consumed : consumed_function, residual : residual_function },],
+consumed : consumed_function, residual : residual_function },{obj:(function(){ var elMet = new ElectricMeter(7, 21224776, "Общий на весь ТЦ  ввод 2 ", "", 400);
+    elMet.consumedList = [162675];
+    elMet.startData = 298385;
+    elMet.endData = 461060;
+    return elMet;})(),
+    children:[{obj:(function(){ var elMet = new ElectricMeter(2, 26912775, "Чиллер ", "5", 120);
+    elMet.consumedList = [0];
+    elMet.startData = 46517;
+    elMet.endData = 46517;
+    return elMet;})(),
+    children:[{obj:new ElGroup("ВРУ-4"),
+    children:[{obj:(function(){ var elMet = new ElectricMeter(71, 26076568, "ВРУ ", "7", 40);
+    elMet.consumedList = [3064];
+    elMet.startData = 32431;
+    elMet.endData = 35495;
+    return elMet;})(),
+    children:[{obj:new ElGroup("ЩО-1.2"),
+    children:[{obj:(function(){ var elMet = new ElectricMeter(74, 26093299, "Прод.Магазин пом 023-028, 030-033, 035-036, 051-076 (аварийное освещение) ", "7", 1);
+    elMet.consumedList = [101227];
+    elMet.startData = 537092;
+    elMet.endData = 638319;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },],
+consumed : consumed_function, residual : residual_function },],
+consumed : consumed_function, residual : residual_function },],
+consumed : consumed_function, residual : residual_function },],
+consumed : consumed_function, residual : residual_function },{obj:new ElGroup("ЩРС 2.1"),
+    children:[{obj:(function(){ var elMet = new ElectricMeter(8, 25447575, "Прод.Магазин общий ввод 1 ", "4", 40);
+    elMet.consumedList = [3086];
+    elMet.startData = 19091;
+    elMet.endData = 22177;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },{obj:(function(){ var elMet = new ElectricMeter(81, 24099908, "пом.302-304, 306-325, 327 (освещение,розетки, фанкойл.электр.замки) ", "1", 1);
+    elMet.consumedList = [891256];
+    elMet.startData = 11308122;
+    elMet.endData = 12199378;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },{obj:(function(){ var elMet = new ElectricMeter(61, 22462317, "Фасад здания ", "5", 1);
+    elMet.consumedList = [1159631];
+    elMet.startData = 8680871;
+    elMet.endData = 9840502;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },{obj:new ElGroup("ЩС 4"),
+    children:[{obj:(function(){ var elMet = new ElectricMeter(134, 24392979, "пом.342 (освещение, розетки, фанкойл) ", "6", 1);
+    elMet.consumedList = [14987];
+    elMet.startData = 15992;
+    elMet.endData = 30979;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },{obj:(function(){ var elMet = new ElectricMeter(131, 24949224, "пом.345 (освещение, розетки, фанкойл) ", "6", 1);
+    elMet.consumedList = [1];
+    elMet.startData = 43744;
+    elMet.endData = 43745;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },{obj:(function(){ var elMet = new ElectricMeter(132, 24393109, "пом.344 (освещение, розетки, фанкойл) ", "6", 1);
+    elMet.consumedList = [3395];
+    elMet.startData = 7546;
+    elMet.endData = 10941;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },{obj:(function(){ var elMet = new ElectricMeter(133, 24948375, "пом.343 (освещение, розетки, фанкойл) ", "6", 1);
+    elMet.consumedList = [2226];
+    elMet.startData = 17004;
+    elMet.endData = 19230;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },{obj:(function(){ var elMet = new ElectricMeter(135, 24949089, "пом.341 (коридор) ", "5", 1);
+    elMet.consumedList = [105742];
+    elMet.startData = 314416;
+    elMet.endData = 420158;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },],
+consumed : consumed_function, residual : residual_function },],
+consumed : consumed_function, residual : residual_function },{obj:new ElGroup("ЩРС 2.2"),
+    children:[{obj:(function(){ var elMet = new ElectricMeter(9, 28760407, "Оборудование бассейна ", "2", 40);
+    elMet.consumedList = [366657];
+    elMet.startData = 210194;
+    elMet.endData = 576851;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },{obj:(function(){ var elMet = new ElectricMeter(10, 28359510, "Ордер ЩО-2.1.1 эл.щит.2 (освещение) ", "1", 40);
+    elMet.consumedList = [12];
+    elMet.startData = 545961;
+    elMet.endData = 545973;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },{obj:(function(){ var elMet = new ElectricMeter(50, 23394012, "пом.349-392 спорт.клуб.бассейн (освещение ) ", "2", 1);
+    elMet.consumedList = [2699821];
+    elMet.startData = 13502047;
+    elMet.endData = 16201868;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },],
+consumed : consumed_function, residual : residual_function },],
+consumed : consumed_function, residual : residual_function },],
+consumed : consumed_function, residual : residual_function },{obj:new ElGroup("ВРУ"),
+    children:[{obj:new ElGroup("ВРУ-1"),
+    children:[{obj:(function(){ var elMet = new ElectricMeter(14, 22043100, "ВРУ 1 ", "7", 80);
+    elMet.consumedList = [439371];
+    elMet.startData = 3321147;
+    elMet.endData = 3760518;
+    return elMet;})(),
+    children:[{obj:new ElGroup("ЩР-8"),
+    children:[{obj:(function(){ var elMet = new ElectricMeter(142, 25508944, "пом.211 (освещение, розетки, фанкойл) ", "6", 1);
+    elMet.consumedList = [169248];
+    elMet.startData = 79078;
+    elMet.endData = 248326;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },{obj:(function(){ var elMet = new ElectricMeter(140, 25509072, "пом.210 (освещение, розетки, фанкойл) ", "6", 1);
+    elMet.consumedList = [581782];
+    elMet.startData = 602124;
+    elMet.endData = 1183906;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },{obj:(function(){ var elMet = new ElectricMeter(80, 24949345, "пом.330.331.332.333.334 (освещение,розетки, фанкойл) ", "6", 1);
+    elMet.consumedList = [30293];
+    elMet.startData = 2893968;
+    elMet.endData = 2924261;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },{obj:(function(){ var elMet = new ElectricMeter(130, 25508933, "пом.329 (освещение, розетки, фанкойл) ", "6", 1);
+    elMet.consumedList = [174663];
+    elMet.startData = 410200;
+    elMet.endData = 584863;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },{obj:(function(){ var elMet = new ElectricMeter(141, 25509207, "пом.201 (освещение, розетки, фанкойл) ", "6", 1);
+    elMet.consumedList = [413588];
+    elMet.startData = 876826;
+    elMet.endData = 1290414;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },{obj:(function(){ var elMet = new ElectricMeter(143, 26090141, " ", "", 1);
+    elMet.consumedList = [379239];
+    elMet.startData = 452832;
+    elMet.endData = 832071;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },],
+consumed : consumed_function, residual : residual_function },{obj:(function(){ var elMet = new ElectricMeter(18, 25506580, "Вентиляция пом. 106 (Ордер) ", "1", 40);
+    elMet.consumedList = [137088];
+    elMet.startData = 539406;
+    elMet.endData = 676494;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },{obj:(function(){ var elMet = new ElectricMeter(124, 26038389, "кафе пом.034, 037-050, 120-134, 139-141, 148-156, 165-170 (вентиляция) ", "3", 1);
+    elMet.consumedList = [312282];
+    elMet.startData = 10861938;
+    elMet.endData = 11174220;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },{obj:(function(){ var elMet = new ElectricMeter(127, 24947194, "кафе 2эт пом.227-241 (вентиляция) ", "3", 1);
+    elMet.consumedList = [544201];
+    elMet.startData = 5266796;
+    elMet.endData = 5810997;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },{obj:(function(){ var elMet = new ElectricMeter(52, 26047855, "пом.349-392 спорт.клуб.бассейн (вентиляция) ", "2", 1);
+    elMet.consumedList = [7020773];
+    elMet.startData = 27013522;
+    elMet.endData = 34034295;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },{obj:(function(){ var elMet = new ElectricMeter(42, 26047834, "пом.207, 208, 209 (вентиляция) ", "5", 1);
+    elMet.consumedList = [1456837];
+    elMet.startData = 18600186;
+    elMet.endData = 20057023;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },{obj:(function(){ var elMet = new ElectricMeter(62, 26047810, "пом.335,336,337, 338,339,340 (вентиляция) ", "5", 1);
+    elMet.consumedList = [3725472];
+    elMet.startData = 27166912;
+    elMet.endData = 30892384;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },{obj:(function(){ var elMet = new ElectricMeter(31, 26047835, "вентиляция ", "5", 1);
+    elMet.consumedList = [81251];
+    elMet.startData = 4482830;
+    elMet.endData = 4564081;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },{obj:(function(){ var elMet = new ElectricMeter(160, 29870799, "Котельная ", "5", 16);
+    elMet.consumedList = [0];
+    elMet.startData = -999;
+    elMet.endData = -999;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },{obj:(function(){ var elMet = new ElectricMeter(114, 24948507, "уличное освещение ", "5", 1);
+    elMet.consumedList = [1246988];
+    elMet.startData = 9293309;
+    elMet.endData = 10540297;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },{obj:(function(){ var elMet = new ElectricMeter(73, 26093259, "Прод.Магазин пом 023-028, 030-033, 035-036, 051-076 (вентиляция) ", "7", 1);
+    elMet.consumedList = [1011572];
+    elMet.startData = 8607347;
+    elMet.endData = 9618919;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },],
+consumed : consumed_function, residual : residual_function },{obj:(function(){ var elMet = new ElectricMeter(15, 29857941, "ВРУ 1 ", "7", 80);
+    elMet.consumedList = [94105];
+    elMet.startData = 4490;
+    elMet.endData = 98595;
+    return elMet;})(),
+    children:[{obj:new ElGroup("ЩМ 2"),
+    children:[{obj:new ElGroup("ЩМО"),
+    children:[{obj:(function(){ var elMet = new ElectricMeter(20, 25508947, "пом.001-010, 101-109 (освещение розетки) ", "1", 1);
+    elMet.consumedList = [637249];
+    elMet.startData = 8326391;
+    elMet.endData = 8963640;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },{obj:(function(){ var elMet = new ElectricMeter(41, 26093188, "пом.207, 208, 209 (освещение, розетки) ", "5", 1);
+    elMet.consumedList = [171406];
+    elMet.startData = 2119559;
+    elMet.endData = 2290965;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },{obj:(function(){ var elMet = new ElectricMeter(125, 25507915, "кафе 2эт пом.227-241 (розетки, освещение) ", "3", 1);
+    elMet.consumedList = [58754];
+    elMet.startData = 3051867;
+    elMet.endData = 3110621;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },{obj:(function(){ var elMet = new ElectricMeter(54, 25508968, "пом.242-251 тех.этаж (освещение) ", "2", 1);
+    elMet.consumedList = [202177];
+    elMet.startData = 11907684;
+    elMet.endData = 12109861;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },{obj:(function(){ var elMet = new ElectricMeter(64, 25508735, "пом.335,336,337, 338,339,340 (освещение, розетки) ", "5", 1);
+    elMet.consumedList = [1778318];
+    elMet.startData = 8741239;
+    elMet.endData = 10519557;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },],
+consumed : consumed_function, residual : residual_function },{obj:(function(){ var elMet = new ElectricMeter(60, 25509233, "пом.338 ", "5", 1);
+    elMet.consumedList = [85448];
+    elMet.startData = 177328;
+    elMet.endData = 262776;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },{obj:(function(){ var elMet = new ElectricMeter(86, 24948286, "пом.105 (зарядная у лифта) ", "1", 1);
+    elMet.consumedList = [19400];
+    elMet.startData = 105761;
+    elMet.endData = 125161;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },{obj:new ElGroup("ЩМОА"),
+    children:[{obj:(function(){ var elMet = new ElectricMeter(104, 25509205, "пом.158 (освещение, розетки, фанкойл) ", "6", 1);
+    elMet.consumedList = [117704];
+    elMet.startData = 524177;
+    elMet.endData = 641881;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },{obj:(function(){ var elMet = new ElectricMeter(103, 25509106, "пом.159 (освещение, розетки, фанкойл) ", "6", 1);
+    elMet.consumedList = [283453];
+    elMet.startData = 511555;
+    elMet.endData = 795008;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },{obj:(function(){ var elMet = new ElectricMeter(102, 24948387, "пом.160 (освещение, розетки, фанкойл) ", "6", 1);
+    elMet.consumedList = [135025];
+    elMet.startData = 1639499;
+    elMet.endData = 1774524;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },{obj:(function(){ var elMet = new ElectricMeter(101, 25508943, "пом.161 (освещение, розетки, фанкойл) ", "6", 1);
+    elMet.consumedList = [292332];
+    elMet.startData = 1149799;
+    elMet.endData = 1442131;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },{obj:(function(){ var elMet = new ElectricMeter(100, 25507155, "пом.162 (освещение, розетки, фанкойл) ", "6", 1);
+    elMet.consumedList = [180899];
+    elMet.startData = 999365;
+    elMet.endData = 1180264;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },],
+consumed : consumed_function, residual : residual_function },{obj:(function(){ var elMet = new ElectricMeter(22, 25507403, "доквеллер, грузовой лифт ", "1", 1);
+    elMet.consumedList = [425221];
+    elMet.startData = 2061387;
+    elMet.endData = 2486608;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },{obj:(function(){ var elMet = new ElectricMeter(12, 24948277, "пом.077 парковка (освещение) ", "5", 1);
+    elMet.consumedList = [222830];
+    elMet.startData = 3243756;
+    elMet.endData = 3466586;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },{obj:(function(){ var elMet = new ElectricMeter(30, 22462314, "пом.110-119.137-147 (освещение,розетки) ", "5", 1);
+    elMet.consumedList = [2760771];
+    elMet.startData = 19919222;
+    elMet.endData = 22679993;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },{obj:(function(){ var elMet = new ElectricMeter(24, 25509252, "сервисные стойки ", "1", 1);
+    elMet.consumedList = [0];
+    elMet.startData = -999;
+    elMet.endData = -999;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },{obj:(function(){ var elMet = new ElectricMeter(151, 24948596, "пом.019 (освещение, розетки, фанкойл) ", "6", 1);
+    elMet.consumedList = [1366];
+    elMet.startData = 221566;
+    elMet.endData = 222932;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },{obj:(function(){ var elMet = new ElectricMeter(150, 24949347, "пом.020 (освещение, розетки, фанкойл) ", "6", 1);
+    elMet.consumedList = [1452];
+    elMet.startData = 83027;
+    elMet.endData = 84479;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },],
+consumed : consumed_function, residual : residual_function },],
+consumed : consumed_function, residual : residual_function },],
+consumed : consumed_function, residual : residual_function },{obj:new ElGroup("ВРУ-2"),
+    children:[{obj:(function(){ var elMet = new ElectricMeter(16, 22043108, "АВР 1 ", "7", 1);
+    elMet.consumedList = [43631];
+    elMet.startData = 1397821;
+    elMet.endData = 1441452;
+    return elMet;})(),
+    children:[{obj:(function(){ var elMet = new ElectricMeter(11, 24393011, "пом.077 парковка (аварийное освещение) ", "5", 1);
+    elMet.consumedList = [873588];
+    elMet.startData = 3752768;
+    elMet.endData = 4626356;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },{obj:(function(){ var elMet = new ElectricMeter(19, 28807243, "траволаторы, пас.лифт ", "5", 1);
+    elMet.consumedList = [993490];
+    elMet.startData = 38087;
+    elMet.endData = 1031577;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },{obj:(function(){ var elMet = new ElectricMeter(23, 26046991, "пом.107 (щит ИБП) ", "1", 1);
+    elMet.consumedList = [368376];
+    elMet.startData = 1492431;
+    elMet.endData = 1860807;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },],
+consumed : consumed_function, residual : residual_function },],
+consumed : consumed_function, residual : residual_function },{obj:new ElGroup("ВРУ-3"),
+    children:[{obj:(function(){ var elMet = new ElectricMeter(17, 24949887, "АВР 2 ", "7", 80);
+    elMet.consumedList = [103521];
+    elMet.startData = 694293;
+    elMet.endData = 797814;
+    return elMet;})(),
+    children:[{obj:new ElGroup("ЩМ 4"),
+    children:[{obj:(function(){ var elMet = new ElectricMeter(111, 25508810, "пом.113 (серверная стойка) ", "5", 1);
+    elMet.consumedList = [192476];
+    elMet.startData = 1620977;
+    elMet.endData = 1813453;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },{obj:(function(){ var elMet = new ElectricMeter(33, 25507473, "приводы дверей ", "5", 1);
+    elMet.consumedList = [0];
+    elMet.startData = -999;
+    elMet.endData = -999;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },{obj:(function(){ var elMet = new ElectricMeter(136, 26090136, "Cерверная ", "2", 1);
+    elMet.consumedList = [931130];
+    elMet.startData = 110805;
+    elMet.endData = 1041935;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },{obj:(function(){ var elMet = new ElectricMeter(113, 25508288, "пом.113 (пожарная сигнализация) ", "5", 1);
+    elMet.consumedList = [180113];
+    elMet.startData = 1740982;
+    elMet.endData = 1921095;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },{obj:(function(){ var elMet = new ElectricMeter(112, 24948253, "пом.113 (розетки) ", "5", 1);
+    elMet.consumedList = [719779];
+    elMet.startData = 6789628;
+    elMet.endData = 7509407;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },{obj:(function(){ var elMet = new ElectricMeter(13, 25509107, "поэтажные насосы ", "5", 1);
+    elMet.consumedList = [110880];
+    elMet.startData = 1339378;
+    elMet.endData = 1450258;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },{obj:new ElGroup("ЩМОА"),
+    children:[{obj:(function(){ var elMet = new ElectricMeter(21, 25508625, "пом.001-010, 101-109 (аварийное освещение) ", "1", 1);
+    elMet.consumedList = [3102485];
+    elMet.startData = 17320417;
+    elMet.endData = 20422902;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },{obj:(function(){ var elMet = new ElectricMeter(51, 25508674, "пом.349-392 спорт.клуб.бассейн (аварийное освещение) ", "2", 1);
+    elMet.consumedList = [189964];
+    elMet.startData = 1316893;
+    elMet.endData = 1506857;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },{obj:(function(){ var elMet = new ElectricMeter(40, 26093217, "авар.освещение, пожарная сигнализация ", "5", 1);
+    elMet.consumedList = [199565];
+    elMet.startData = 948513;
+    elMet.endData = 1148078;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },{obj:(function(){ var elMet = new ElectricMeter(63, 25509249, "пом.335,336,337, 338,339,340 (ававрийное освещение) ", "5", 1);
+    elMet.consumedList = [42700];
+    elMet.startData = 1287196;
+    elMet.endData = 1329896;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },{obj:(function(){ var elMet = new ElectricMeter(126, 25507284, "кафе 2эт пом.227-241 (аварийное освещение) ", "3", 1);
+    elMet.consumedList = [37807];
+    elMet.startData = 2689835;
+    elMet.endData = 2727642;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },{obj:(function(){ var elMet = new ElectricMeter(32, 27433248, "пом.110-119.137-147 (авар.освещение) ", "5", 1);
+    elMet.consumedList = [875607];
+    elMet.startData = 5073280;
+    elMet.endData = 5948887;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },{obj:(function(){ var elMet = new ElectricMeter(123, 26093298, "кафе пом.034,037-050, 120-134,139-141,148-156, 165-170 (аварийное освещение) ", "3", 1);
+    elMet.consumedList = [90019];
+    elMet.startData = 1171075;
+    elMet.endData = 1261094;
+    return elMet;})(),
+    children:[],
+consumed : consumed_function, residual : residual_function },],
+consumed : consumed_function, residual : residual_function },],
+consumed : consumed_function, residual : residual_function },],
+consumed : consumed_function, residual : residual_function },],
+consumed : consumed_function, residual : residual_function },],
+consumed : consumed_function, residual : residual_function },],
+consumed : consumed_function, residual : residual_function }
+/*******************************************************/
+;
+})();
+
+(function parseAdminGroup(elem) {
+    if (elem.obj instanceof ElectricMeter){
+        adminGroupsArr.forEach(function(admG){
+        if (elem.obj.adminGroup === admG.idgroup){
+            admG.children.push(elem.obj);
+            elem.obj.adminGroup = admG;
+            elem.obj.node = elem ; // чтобы иметь доступ к древу электросети и функции расчета энергопотребления
+        }
+    });
+    }
+    elem.children.forEach(
+        function(val){
+            parseAdminGroup(val);   
+        }
+    )
+})(electricGrid);
+
+var electrGridUL = document.getElementById("electgrid")
+var accountingTable = document.getElementById("accountingTable")
+
+;(function createUllist(gridObj, ullevel){
+    var newelem = document.createElement('il');
+    ullevel.appendChild(newelem);
+    newelem = newelem.appendChild(document.createElement('div')) ;
+    if (gridObj.obj instanceof ElectricMeter){
+        newelem.setAttribute("class","elMetDIV");
+        var meter = gridObj.obj;
+        newelem.innerHTML =  
+        `<table class="tableMeter" border="1">
+            <tr>
+                <td colspan="6" align="center" style="font-size: 150%;">Счетчик</td>
+            </tr>
+            <tr>
+                <th width="5%" scope="col">Адрес</th>
+                <th width="10%" scope="col">S/N</th>
+                <th scope="col">Начало, кВт</th>
+                <th scope="col">Конец, кВт</th>
+                <th scope="col">Потреблено, кВт</th>
+                <th scope="col">Неучтено, кВт</th>
+            </tr>
+            <tr>
+                <td>${meter.addr}</td>
+                <td>${meter.id}</td>
+                <td>${meter.startData < 0 ? "н/д" : (meter.startData / 1000 * meter.k_current).toFixed(3)}</td>
+                <td>${meter.endData <  0 ? "н/д" : (meter.endData / 1000 * meter.k_current).toFixed(3) }</td>
+                <td>${(gridObj.consumed() / 1000).toFixed(3)}</td>
+                <td>${(gridObj.residual() / 1000).toFixed(3)}</td>
+            </tr>
+            <tr>
+                <td colspan="2">${meter.adminGroup.name ? meter.adminGroup.name : meter.adminGroup}</td>
+                <td colspan="4">${meter.zone}</td>
+            </tr>
+        </table><p></p>`   
+    } 
+    else if(gridObj.obj instanceof ElGroup){
+        newelem.setAttribute("class","elMetGroupDIV");
+        newelem.innerHTML =  
+        `<table class="tableGroup" border="1" width="50%">
+            <tr>
+                <td colspan="3" align="center" style="font-size: 150%;">${gridObj.obj.name}</td>
+            </tr>
+            <tr>
+                <th scope="col">Потреблено, кВт</th>
+                <th scope="col">Неучтено, кВт</th>
+            </tr>
+            <tr>
+                <td>${(gridObj.consumed()/1000).toFixed(3)}</td>
+                <td>${(gridObj.residual()/1000).toFixed(3)}</td>
+            </tr>
+        </table><p></p>`
+    }
+    var newUL;
+    if (gridObj.children.length > 0){
+        newUL = newelem.appendChild(
+        function(){
+            var v = document.createElement('details');
+            v.setAttribute("open" , "1");
+            return v
+        }() 
+        ).appendChild(document.createElement('ul'));
+        newUL.setAttribute("type" , "circle");
+    }
+    else{
+        newUL = newelem.appendChild(document.createElement('ul'));
+        newUL.setAttribute("type" , "circle");
+    }
+    //newelem.appendChild(newUL);
+    gridObj.children.forEach(
+        function(val){
+            createUllist(val, newUL);   
+        }
+    );
+})(electricGrid,electrGridUL);
+
+var totalrow ;
+;(function(){
+   /* <th width="5%" scope="col">№ п/п</th>
+   <th scope="col">Название</th>
+   <th width="20%" scope="col">Потреблено, кВт*ч</th>
+   <th width="20%" scope="col">Стоимость</th>*/
+   adminGroupsArr.forEach(function(elem, ind){
+    var row = accountingTable.insertRow(-1);
+    row.setAttribute('class','Hilight');
+    row.insertCell(0).innerHTML= ind+1;
+    row.insertCell(1).innerHTML= elem.name;
+    row.insertCell(2).innerHTML= (elem.consumed()/1000).toFixed(3);
+    (function(){
+        var cell = row.insertCell(3);
+        elem.priceCell = cell;
+        return cell;
+                }()
+    ).innerHTML= '';
+    elem.children.forEach(function(elem){
+        var row = accountingTable.insertRow(-1);
+        row.insertCell(0).innerHTML = '';
+        row.insertCell(1).innerHTML= `№ ${elem.id} | ${elem.zone}`;
+        row.insertCell(2).innerHTML= (elem.node.consumed()/1000).toFixed(3);
+        row.insertCell(3).innerHTML= '';
+        }
+    );            
+   })
+   totalrow = accountingTable.insertRow(-1);
+   totalrow.insertCell(-1).innerHTML= '';
+   totalrow.insertCell(-1).innerHTML= "<div style=\"position: relative; right: 1%;\" align=\"right\">ИТОГО</div>";
+   totalrow.insertCell(-1).innerHTML= adminGroupsArr.reduce(function(prev, cur){
+       return prev + cur.consumed()/1000 ;
+   }, 0).toFixed(3);
+   totalrow.insertCell(-1);
+   totalrow.setAttribute("class", "Hilight");
+})()
+
+function refreshTable(){
+    var price = document.getElementById("price").value;
+    var sum = 0 ;
+    adminGroupsArr.forEach(function(elem){
+        var v = (elem.consumed()/1000 * price);
+        sum += v ;
+        elem.priceCell.innerHTML = v.toFixed(2) + ' р.' ;
+    })
+    totalrow.cells[3].innerHTML = sum.toFixed(2) + ' р.';
+}
+</script>
+</html>

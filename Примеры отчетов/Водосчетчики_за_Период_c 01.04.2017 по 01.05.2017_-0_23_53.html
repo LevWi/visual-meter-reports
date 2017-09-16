@@ -1,0 +1,478 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Untitled Document</title>
+<style type="text/css">
+
+  #coment {
+  color: #663300;
+  }
+  #Mhead {
+  font-family: Segoe, "Segoe UI", "DejaVu Sans", "Trebuchet MS", Verdana, sans-serif;
+  font-size: 32px;
+  font-weight: bold;
+  color: #009;
+  }
+  .Hilight {
+  font-weight: bold;
+  background-color: #6CC;
+  }
+  .CellMarked {
+  font-weight: bold;
+  background-color: lime;
+  }
+  .BadData {
+  font-weight: bold;
+  background-color: orange;
+  }
+  input:required:invalid {
+    border:1px solid orangered;
+    background-color: floralwhite;
+  }
+</style>
+</head>
+
+<body>
+<div>
+ <div align="center">
+	<span id="Mhead">Потребление воды по ТЦ "Ордер"</span>
+ </div>
+</div>
+
+<div>
+<span id="coment">
+<em>Показания за период c 01.04.2017 по 01.05.2017 <br>Общее количество счетчиков 49</em>
+</span>
+</div>
+<p></p>
+
+<div align="center">
+<details open> <summary>Отчет по потребителям</summary>
+<p>Стоимость ХВС <input id="coldwaterPrice" type="text" required pattern="\d+(\.\d{2})?" oninput="refreshTable();" > </p>
+<p>Стоимость ГВС <input id="hotwaterPrice" type="text" required pattern="\d+(\.\d{2})?" oninput="refreshTable();" > </p>
+    <table width="80%" border="1" align="center" id="consumerreport">
+        <tr>
+          <th width="5%c" scope="col">№ п/п</th>
+          <th width="50%" scope="col">Потребитель</th>
+          <th  scope="col">ХВС, м<sup>3</sup></th>
+          <th  scope="col">ГВС, м<sup>3</sup></th>
+          <th  scope="col">Стоимость ХВС</th>
+          <th  scope="col">Стоимость ГВС</th>
+        </tr>
+    </table>
+</details>
+</div>
+<p></p>
+<div align="center">
+<details open> <summary>Отчет по счетчикам</summary>
+    <table width="80%" border="1" align="center" id="metersreport">
+        <tr>
+          <th width="5%" scope="col">№ п/п</th>
+          <th width="20%" scope="col">Узел</th>
+          <th width="5%" scope="col">Тип</th>
+          <th width="20%" scope="col">На начало, м<sup>3</sup></th>
+          <th width="20%" scope="col">На конец, м<sup>3</sup></th>
+          <th width="20%" scope="col">Потреблено, м<sup>3</sup></th>
+          <th  scope="col">Комментарий</th>
+        </tr>
+    </table>
+</details>
+</div>
+<p>&nbsp;</p>
+
+</body>
+
+<script>
+'use strict'
+
+var priceColdWater = 0;
+var priceHotWater = 0;
+
+var Watermeter = function(id , type , startdata, enddata, idgroup){
+     this.id = id ;
+     this.type = type ;
+     this.startdata = startdata ;
+     this.enddata = enddata ;
+	 this.idgroup = idgroup ;
+ };
+ Object.defineProperty( Watermeter.prototype, "difference" ,
+     {
+     get : function() { 
+         return (this.enddata - this.startdata) ;}
+     });
+
+class AdminGroup {
+    constructor(name, idgroup){
+        this.name = name ;
+        this.idgroup = idgroup;
+        this.waterNodes = [];
+        this.cellLink = {
+                sumColdWater : null ,
+                sumHotWater : null ,
+                sumCostColdWater : null ,
+                sumCostHotWater : null
+                }
+    }
+    refreshData() {
+        if ((this.cellLink.sumColdWater !== null)||(this.cellLink.sumCostHotWater !== null)){
+            this.cellLink.sumCostColdWater.innerHTML = (priceColdWater * this.giveColdWater()).toFixed(2);
+            this.cellLink.sumCostHotWater.innerHTML = (priceHotWater * this.giveHotWater()).toFixed(2);
+            this.cellLink.sumColdWater.innerHTML = this.giveColdWater().toFixed(3);
+            this.cellLink.sumHotWater.innerHTML = this.giveHotWater().toFixed(3);
+        }
+    }
+    tryAddWaterNode(node){
+        if ( (node instanceof WaterNode) && (node.idgroup === this.idgroup) ){
+            this.waterNodes.push(node);
+        }
+    }
+    giveColdWater(){
+        var water = 0 ;
+        for(var i = 0 ; i < this.waterNodes.length ; i++){
+            water += this.waterNodes[i].giveColdWater();
+        }
+        return water;
+    }
+    giveHotWater(){
+        var water = 0 ;
+        for(var i = 0 ; i < this.waterNodes.length ; i++){
+            water += this.waterNodes[i].giveHotWater();
+        }
+        return water;
+    }
+} ;
+
+class WaterNode {
+    constructor(name, consumername, idgroup){
+        this.name = name ;
+        this.consumername = consumername;
+        this.idgroup = idgroup;
+        this.waterMeters = [];
+    }
+    giveColdWater() {
+        var coldwater = null ;
+        this.waterMeters.forEach(function(meter){
+            if ( meter instanceof Watermeter){
+                if ((meter.type === "В1.2") || (meter.type === "В1.1") ||  (meter.type === "В1")){
+                    coldwater += meter.difference;
+                }
+            } else if(meter instanceof WaterNode){
+                    //Может вызвать рекурсию!
+                    coldwater -= meter.giveColdWater();
+            }
+        }
+        );
+        return coldwater;
+    }
+    giveHotWater(){
+        var hotwater = null ;
+        this.waterMeters.forEach(function(meter){
+                                                    if ( meter instanceof Watermeter){
+                                                        if (meter.type === "Т3"){
+                                                            hotwater += meter.difference;
+                                                        }
+                                                        if (meter.type === "Т4"){
+                                                            hotwater -= meter.difference;
+                                                        }
+                                                    }else if(meter instanceof WaterNode){
+                                                            //Может вызвать рекурсию!
+                                                            hotwater -= meter.giveHotWater();
+                                                        }
+                                                }
+        );
+        return hotwater;
+    }
+} ;
+
+
+var arr = new Array();
+var adminGroupsArr = new Array();
+// массив генерируется автоматически
+
+; adminGroupsArr.push(new AdminGroup("Ордер", "1"));
+adminGroupsArr.push(new AdminGroup("Спорт Клуб", "2"));
+adminGroupsArr.push(new AdminGroup("Кафе", "3"));
+adminGroupsArr.push(new AdminGroup("Продуктовый магазин", "4"));
+adminGroupsArr.push(new AdminGroup("МОП", "5"));
+adminGroupsArr.push(new AdminGroup("Аренда №201", "6"));
+adminGroupsArr.push(new AdminGroup("Аренда №210", "7"));
+adminGroupsArr.push(new AdminGroup("Аренда №330 С/У", "8"));
+adminGroupsArr.push(new AdminGroup("Аренда №211", "9"));
+arr.push(new WaterNode("Водом. узел №1", "Общий ВУ на вводе", "common"));
+arr[arr.length - 1].waterMeters.push(new Watermeter("14578972", "В1", 992.199951171875, 1575.90002441406));
+arr.push(new WaterNode("Водом. узел №2", "Ордер С/У №006,007", "1"));
+arr[arr.length - 1].waterMeters.push(new Watermeter("55385620", "В1.2", 3.54200007021427, 6.79499985277653));
+arr[arr.length - 1].waterMeters.push(new Watermeter("55385629", "Т3", 6.81100021395832, 8.89699970278889));
+arr.push(new WaterNode("Водом. узел №3", "Продуктовый магазин (цокольный этаж)", "4"));
+arr[arr.length - 1].waterMeters.push(new Watermeter("55144576", "Т4", 222.962005615234, 365.771026611328));
+arr[arr.length - 1].waterMeters.push(new Watermeter("34824661", "Т3", 870.480010986328, 1008.43997192383));
+arr[arr.length - 1].waterMeters.push(new Watermeter("55144584", "В1.2", 3.22300010919571, 4.14599996805191));
+arr[arr.length - 1].waterMeters.push(new Watermeter("34824663", "В1.1", 68.3200000524521, 68.3300000429153));
+arr.push(new WaterNode("Водом. узел №4", "МОП Помещение охраны №113", "5"));
+arr[arr.length - 1].waterMeters.push(new Watermeter("55385610", "В1.2", 16.9400024414063, 24.177001953125));
+arr[arr.length - 1].waterMeters.push(new Watermeter("55385616", "Т3", 3.23600006103516, 5.06400108337402));
+arr.push(new WaterNode("Водом. узел №5", "МОП Клад. убор. инвентаря №116", "5"));
+arr[arr.length - 1].waterMeters.push(new Watermeter("55385613", "В1.2", 5.97400020062923, 11.5890004485846));
+arr[arr.length - 1].waterMeters.push(new Watermeter("55385621", "Т3", 9.17500003799796, 12.964999999851));
+arr.push(new WaterNode("Водом. узел №6", "Кафе 1-й,2-й и цокольный этаж", "3"));
+arr[arr.length - 1].waterMeters.push(new Watermeter("34825896", "Т4", 3805.22998046875, 4176.57006835938));
+arr[arr.length - 1].waterMeters.push(new Watermeter("14561809", "Т3", 3630.20007324219, 3992.79992675781));
+arr[arr.length - 1].waterMeters.push(new Watermeter("55144578", "В1.2", 28.8250007629395, 52.1609992980957));
+arr[arr.length - 1].waterMeters.push(new Watermeter("14561745", "В1.1", 78.8000011444092, 79));
+arr.push(new WaterNode("Водом. узел №7", "Кафе С/У №167,168,169,170", "3"));
+arr[arr.length - 1].waterMeters.push(new Watermeter("55385603", "В1.2", 0, 0));
+arr[arr.length - 1].waterMeters.push(new Watermeter("55385633", "Т3", 0.00399994850158691, 0.00399994850158691));
+arr.push(new WaterNode("Водом. узел №8", "МОП С/У №137,138,142,144", "5"));
+arr[arr.length - 1].waterMeters.push(new Watermeter("55385631", "В1.2", 26.114999294281, 48.9490008354187));
+arr[arr.length - 1].waterMeters.push(new Watermeter("55385624", "Т3", 0, 0));
+arr.push(new WaterNode("Водом. узел №9", "Аренда №201", "6"));
+arr[arr.length - 1].waterMeters.push(new Watermeter("55385642", "В1.2", -0.0189999993890524, 0));
+arr[arr.length - 1].waterMeters.push(new Watermeter("55385640", "Т3", -0.00899999961256981, 0));
+arr.push(new WaterNode("Водом. узел №10", "Аренда С/У №204", "6"));
+arr[arr.length - 1].waterMeters.push(new Watermeter("55385625", "В1.2", 0, 0));
+arr[arr.length - 1].waterMeters.push(new Watermeter("55385626", "Т3", 0, 0));
+arr.push(new WaterNode("Водом. узел №11", "МОП С/У №207,208", "1"));
+arr[arr.length - 1].waterMeters.push(new Watermeter("55385615", "В1.2", 0.605000019073486, 1.74300003051758));
+arr[arr.length - 1].waterMeters.push(new Watermeter("55385611", "Т3", 0.282000005245209, 0.456999957561493));
+arr.push(new WaterNode("Водом. узел №12", "Аренда №210", "7"));
+arr[arr.length - 1].waterMeters.push(new Watermeter("55385638", "В1.2", -0.0280000008642673, 0));
+arr[arr.length - 1].waterMeters.push(new Watermeter("55385641", "Т3", -0.0230000000447035, 0));
+arr.push(new WaterNode("Водом. узел №13", "Спорт Клуб Постирочная №221", "2"));
+arr[arr.length - 1].waterMeters.push(new Watermeter("55385627", "В1.2", 0.238000005483627, 1.28199994564056));
+arr[arr.length - 1].waterMeters.push(new Watermeter("55385612", "Т3", 0.473999992012978, 2.52399994432926));
+arr.push(new WaterNode("Водом. узел №14", "Спорт Клуб С/У №223,224", "2"));
+arr[arr.length - 1].waterMeters.push(new Watermeter("55385639", "В1.2", 1.7519998550415, 4.95999956130981));
+arr[arr.length - 1].waterMeters.push(new Watermeter("55385623", "Т3", 0.125, 0.295000076293945));
+arr.push(new WaterNode("Водом. узел №15", "Ордер С/У 306,307", "1"));
+arr[arr.length - 1].waterMeters.push(new Watermeter("55385606", "В1.2", 6.61999893188477, 10.1490001678467));
+arr[arr.length - 1].waterMeters.push(new Watermeter("55385628", "Т3", 0.430999934673309, 0.657999932765961));
+arr.push(new WaterNode("Водом. узел №16", "Ордер Администрация 3-й этаж", "1"));
+arr[arr.length - 1].waterMeters.push(new Watermeter("34825904", "В1.2", 76.9900016784668, 89.629997253418));
+arr[arr.length - 1].waterMeters.push(new Watermeter("34825973", "Т3", 39.8099994659424, 49.2700023651123));
+arr[arr.length - 1].waterMeters.push(new Watermeter("55144585", "Т4", 0, 0));
+arr.push(new WaterNode("Водом. узел №17", "Аренда №330", "8"));
+arr[arr.length - 1].waterMeters.push(new Watermeter("55385617", "В1.2", 0.789999961853027, 1.41499996185303));
+arr[arr.length - 1].waterMeters.push(new Watermeter("55385618", "Т3", 0.204999983310699, 0.383000016212463));
+arr.push(new WaterNode("Водом. узел №18", "МОП С/У №337", "5"));
+arr[arr.length - 1].waterMeters.push(new Watermeter("55385609", "В1.2", 0.120999999344349, 0.805000007152557));
+arr[arr.length - 1].waterMeters.push(new Watermeter("55385607", "Т3", 0.0209999978542328, 0.0599999725818634));
+arr.push(new WaterNode("Водом. узел №19", "Спорт Клуб №354", "2"));
+arr[arr.length - 1].waterMeters.push(new Watermeter("14570203", "В1.2", 99.8999977111816, 126.299999237061));
+arr[arr.length - 1].waterMeters.push(new Watermeter("14561776", "Т3", 248.399993896484, 298.800003051758));
+arr[arr.length - 1].waterMeters.push(new Watermeter("34826310", "Т4", 673.470001220703, 786.079986572266));
+arr.push(new WaterNode("Водом. узел №20", "Спорт Клуб С/У №351,350", "2"));
+arr[arr.length - 1].waterMeters.push(new Watermeter("55385634", "В1.2", 0.866000056266785, 2.00199997425079));
+arr[arr.length - 1].waterMeters.push(new Watermeter("55385619", "Т3", 0.149999976158142, 0.287999987602234));
+arr.push(new WaterNode("Водом. узел №21", "МОП С/У №346,347", "5"));
+arr[arr.length - 1].waterMeters.push(new Watermeter("55385602", "В1.2", 10.2549999952316, 10.2630000114441));
+arr[arr.length - 1].waterMeters.push(new Watermeter("55385636", "Т3", 0.00299999862909317, 0.00299999862909317));
+arr.push(new WaterNode("Водом. узел №22(аренда)", "Аренда №211", "9"));
+arr[arr.length - 1].waterMeters.push(new Watermeter("58091796", "В1.2", 0, 0));
+arr[arr.length - 1].waterMeters.push(new Watermeter("56796490", "Т3", 0, 0));
+
+
+/////////////
+
+ var total_result = {
+    cellLink : {
+    sumColdWater : null ,
+    sumHotWater : null ,
+    sumCostColdWater : null ,
+    sumCostHotWater : null
+    },
+    refreshData : function(){
+        function tryWriteData(cell , data, fixed) {
+            if (cell !== null){
+                cell.innerHTML = Number(data).toFixed(typeof fixed == undefined ? 3 : fixed);
+            }
+        }
+        var sumcold = 0 , sumhot = 0;        
+        for(var i=0 ; i < adminGroupsArr.length ; i++){
+            sumcold += adminGroupsArr[i].giveColdWater() ;
+            sumhot += adminGroupsArr[i].giveHotWater() ;
+        }
+        sumcold += Number(document.getElementById("coldwater_boileroom").value);
+        sumhot += Number(document.getElementById("hotwater_boileroom").value);
+        tryWriteData(this.cellLink.sumColdWater , sumcold , 3 );
+        tryWriteData(this.cellLink.sumHotWater , sumhot , 3);
+        tryWriteData(this.cellLink.sumCostColdWater , sumcold * priceColdWater, 2 );
+        tryWriteData(this.cellLink.sumCostHotWater , sumhot * priceHotWater, 2 );
+    }
+}
+
+var WaterPool= new WaterNode("#", "Бассейн", "2");
+    WaterPool.cellLinkColdWater = null;
+    WaterPool.cellLinkHotWater = null;
+    WaterPool.giveHotWater = function() {return 0;} ;
+    WaterPool.giveColdWater = function() {
+                var coldwaterCommon = 0;
+                var sumOtherColdWater = 0;
+                var sumOtherHotWater = 0;                
+                for(var i=0; i < arr.length ; i++){
+                    if (arr[i].name === "#") continue;
+                    if (String(arr[i].consumername).indexOf("Общий ВУ") >= 0){
+                        coldwaterCommon = arr[i].giveColdWater() ;
+                    }
+                    else{
+                        sumOtherColdWater += arr[i].giveColdWater();
+                        sumOtherHotWater += arr[i].giveHotWater()
+                    }
+                }
+                var obj = document.getElementById("coldwater_boileroom");
+                var coldwater_boileroom = obj === null ?  0 : Number(obj.value);
+                var obj = document.getElementById("hotwater_boileroom");
+                var hotwater_boileroom = obj === null ?  0 : Number(obj.value);
+                
+                return +(coldwaterCommon - sumOtherColdWater - sumOtherHotWater - coldwater_boileroom - hotwater_boileroom).toFixed(3) ;
+
+        } ; 
+        WaterPool.refreshData = function(){
+            this.cellLinkColdWater.innerHTML = this.giveColdWater();
+            this.cellLinkHotWater.innerHTML = this.giveHotWater();
+        };
+    arr.push(WaterPool);
+ 
+
+// Добавить особое водомерный узел 6 к 8му
+;(function(){ 
+    var node8 , node6;
+    
+    arr.forEach(function(element) {
+        if (element instanceof WaterNode){
+                if (element.name === "Водом. узел №8"){
+                    node8 = element;
+                    console.log("Узел 8 найден");
+                }
+                if (element.name === "Водом. узел №6"){
+                    node6 = element;
+                    console.log("Узел 6 найден");
+                }
+        }
+    });
+    if ((node6 !== undefined ) && (node8 !== undefined)){
+            node6.waterMeters.push(node8);
+    }
+    else{
+            console.warn("Добавления водомерного узла 6 не произошло!");
+    };
+    //
+})();
+
+// Постороение привязок к административным группам. Проверка соответствие группы в самом объекте
+;(function() {
+    for(var i=0; i < arr.length; i++ ){
+        for(var j=0; j < adminGroupsArr.length; j++)
+                adminGroupsArr[j].tryAddWaterNode(arr[i]);
+    }
+})();
+
+var metersreport_table = document.getElementById("metersreport") ;
+var ConsumerReport_table = document.getElementById("consumerreport") ;
+
+function metersReportAddRow(obj){
+  if (obj instanceof Watermeter){
+    var row = metersreport_table.insertRow(metersreport_table.rows.length);
+    row.insertCell(0).innerHTML= '';
+    row.insertCell(1).innerHTML= obj.id;
+    row.insertCell(2).innerHTML= obj.type;
+    row.insertCell(3).innerHTML= obj.startdata.toFixed(3);
+    row.insertCell(4).innerHTML= obj.enddata.toFixed(3);
+    row.insertCell(5).innerHTML= (+obj.difference).toFixed(3);
+    row.insertCell(6).innerHTML= '';    
+  }
+  else if (obj instanceof WaterNode){
+    if (obj.name !== "#") {
+    var row = metersreport_table.insertRow(metersreport_table.rows.length);
+    row.setAttribute('class','Hilight');
+    row.insertCell(0).innerHTML= "";
+    row.insertCell(1).innerHTML= obj.name;
+    row.insertCell(2).innerHTML= '--';
+    row.insertCell(3).innerHTML= '--';
+    row.insertCell(4).innerHTML= '--';
+    row.insertCell(5).innerHTML= '--';
+    row.insertCell(6).innerHTML= obj.consumername;
+    }
+  }
+};
+
+
+function consumerReportAddRow(obj, num){
+  if (obj instanceof WaterNode){
+    var row = ConsumerReport_table.insertRow(ConsumerReport_table.rows.length);
+    row.insertCell(0).innerHTML= '';
+    row.insertCell(1).innerHTML= obj.consumername;
+    row.insertCell(2).innerHTML= obj.giveColdWater().toFixed(3);
+    row.insertCell(3).innerHTML= obj.giveHotWater().toFixed(3);
+    row.insertCell(4).innerHTML= '';
+    row.insertCell(5).innerHTML= '';
+    if (obj.name === "#"){
+        obj.cellLinkColdWater = row.cells[2];
+        obj.cellLinkHotWater = row.cells[3];
+    }
+  }
+  else if (obj instanceof AdminGroup){
+    var row = ConsumerReport_table.insertRow(ConsumerReport_table.rows.length);
+    row.setAttribute('class','Hilight');
+    row.insertCell(0).innerHTML= num+1;
+    row.insertCell(1).innerHTML= obj.name;
+    obj.cellLink.sumColdWater = row.insertCell(2) ; // cold
+    obj.cellLink.sumHotWater = row.insertCell(3) ; //hot
+    obj.cellLink.sumCostColdWater = row.insertCell(4);
+    obj.cellLink.sumCostHotWater = row.insertCell(5); 
+    obj.refreshData();
+  }
+};
+
+// Строим всю таблицу
+for(var i=0; i < arr.length ; i++){
+        metersReportAddRow(arr[i]);
+        for(var j=0; j < arr[i].waterMeters.length ; j++){
+			if (arr[i].waterMeters[j] instanceof Watermeter)
+					metersReportAddRow(arr[i].waterMeters[j]) ;
+        }
+}
+for(var i=0; i < adminGroupsArr.length ; i++){
+        consumerReportAddRow(adminGroupsArr[i], i);
+        for(var j=0; j < adminGroupsArr[i].waterNodes.length; j++){
+            consumerReportAddRow(adminGroupsArr[i].waterNodes[j]);
+        }
+}
+
+
+
+;(function() {
+    var row = ConsumerReport_table.insertRow(ConsumerReport_table.rows.length);
+    row.insertCell(0).setAttribute("colspan", "2");
+    row.cells[0].innerHTML= "<div align=\"right\">ИТОГО</div>";
+    total_result.cellLink.sumColdWater = row.insertCell(1);
+    total_result.cellLink.sumColdWater.innerHTML = '';
+    total_result.cellLink.sumHotWater = row.insertCell(2);
+    total_result.cellLink.sumHotWater.innerHTML = '';
+    total_result.cellLink.sumCostColdWater = row.insertCell(3);
+    total_result.cellLink.sumCostColdWater.innerHTML = '';
+    total_result.cellLink.sumCostHotWater = row.insertCell(4);
+    total_result.cellLink.sumCostHotWater.innerHTML = '';
+})();
+
+var row = ConsumerReport_table.insertRow(ConsumerReport_table.rows.length);
+    row.setAttribute('class','Hilight');
+    row.insertCell(0).innerHTML= '';
+    row.insertCell(1).innerHTML= "Котельная (ввод вручную)";
+    row.insertCell(2).innerHTML= "<input id=\"coldwater_boileroom\" type=\"text\" required pattern=\"\\d+(\\.\\d{2})?\" oninput=\"refreshTable();\"  onchange=\"refreshTable();\" >";
+    row.insertCell(3).innerHTML= "<input id=\"hotwater_boileroom\" type=\"text\" required pattern=\"\\d+(\\.\\d{2})?\" oninput=\"refreshTable();\" onchange=\"refreshTable();\">";
+    row.insertCell(4).innerHTML= '';
+    row.insertCell(5).innerHTML= '';
+
+function refreshTable(){
+    priceColdWater = document.getElementById("coldwaterPrice").value;
+    priceHotWater = document.getElementById("hotwaterPrice").value;
+    WaterPool.refreshData();
+    for(var i = 0 ; i < adminGroupsArr.length ; i++){
+        adminGroupsArr[i].refreshData();
+    }
+    total_result.refreshData();
+}
+
+</script>
+</html>

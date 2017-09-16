@@ -167,6 +167,8 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <SubType>Designer</SubType>
     </Content>
+    <Content Include="Примеры отчетов\Водосчетчики_за_Период_c 01.04.2017 по 01.05.2017_-0_23_53.html" />
+    <Content Include="Примеры отчетов\Электросчетчики_за_Период_c 01.04.2017 по 01.05.2017_-0_25_16.html" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Protocol\MercLib\MercProtocol.csproj">
